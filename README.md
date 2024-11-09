@@ -1,0 +1,19 @@
+# Remain things
+- Styling
+    - Textarea height adjustment
+    - Proper Checklist styling
+    - Proper spacing
+    - Responsive
+    - Typescale
+- Features
+    - Saving
+    - Proper form enclosure for Checklist
+    - Writting date
+    - Edit content
+    - Edit content order
+    - Add a list item to a close list
+    - Remove items 
+    - Edit content type
+    - Implement object
+    - Responsive alternative to commands.
+    - Paragraph by default execpt on list.
