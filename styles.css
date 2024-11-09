@@ -1,0 +1,54 @@
+*, *::before, *::after {box-sizing: border-box;}
+* {margin: 0;}
+body {line-height: 1.5; -webkit-font-smoothing: antialiased;}
+img, picture, video, canvas, svg {display: block; max-width: 100%;}
+input, button, textarea, select {font: inherit;}
+p, h1, h2, h3, h4, h5, h6 {overflow-wrap: break-word;}
+#root, #__next {isolation: isolate;}
+
+
+
+
+body {
+    font-family: "Inter", sans-serif;
+    font-size: 1.5rem;
+    max-width: 60ch;
+    padding-top: 4rem;
+    margin: auto;
+}
+
+textarea {
+    width: min(100%, 60ch);
+    resize: none;
+    height: fit-content;
+    background: none;
+    padding: 0;
+    border: none;
+}
+
+textarea::placeholder {
+    font-style: italic;
+    color: hsl(0, 0, 35);
+}
+
+textarea:focus-visible {
+    border: none;
+    outline: none;
+}
+
+#note {
+    background-color: white;
+}
+
+.noteinput-container {
+    position: relative;
+
+    div {
+        position: absolute;
+        top: 0;
+        z-index: -1;
+        color: gainsboro;
+    }
+}
+
+
