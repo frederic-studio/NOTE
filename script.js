@@ -13,7 +13,7 @@ const commands = {
     List: [
         {Name: "Ordered", Type: "ol", Placeholder: "Type to add items to the Ordered list"},
         {Name: "Unordered", Type: "ul", Placeholder: "Type to add items to the Unordered list"},
-        {Name: "Checklist", Type: "div class='checklist'", Placeholder: "Type to add items to the Checklist"}
+        {Name: "Checklist", Type: "checklist", Placeholder: "Type to add items to the Checklist"}
     ],
     Object: [
         {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL"}, 
@@ -29,6 +29,10 @@ let currentMainCommand = '';
 let isCommandComplete = false;
 let currentType = 'p'; // Default type
 let isCommandMode = false;
+let checklistCounter = 1; // Counter for checklist IDs
+
+// Track the current active list element
+let activeListElement = null;
 
 function getFilteredSuggestions(input, commandList) {
     return Object.keys(commandList).filter(cmd => cmd.toLowerCase().startsWith(input.toLowerCase())).sort();
@@ -84,6 +88,11 @@ function handleSubSuggestions() {
 function applyCommand(command) {
     const commandObj = commands[currentMainCommand].find(cmd => cmd.Name === command);
     if (commandObj) {
+        // If switching to a different type, close any active list
+        if (currentType !== commandObj.Type && activeListElement) {
+            activeListElement = null;
+        }
+        
         currentType = commandObj.Type;
         autocompleteTextarea.placeholder = commandObj.Placeholder;
         autocompleteTextarea.value = '';
@@ -104,12 +113,42 @@ function createNoteElement(content) {
         link.textContent = content;
         link.target = '_blank';
         return link;
-    } else if (currentType.includes('checklist')) {
-        const div = document.createElement('div');
-        div.className = 'checklist-item';
-        div.innerHTML = `<input type="checkbox"><span>${content}</span>`;
-        return div;
+    } else if (currentType === 'checklist') {
+        const form = document.createElement('form');
+        form.className = 'checklist-form';
+        
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        
+        checkbox.type = 'checkbox';
+        checkbox.id = `checkbox-${checklistCounter}`;
+        checkbox.name = `checkbox-${checklistCounter}`;
+        
+        label.htmlFor = `checkbox-${checklistCounter}`;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(content));
+        
+        form.appendChild(label);
+        checklistCounter++;
+        
+        return form;
+    } else if (currentType === 'ol' || currentType === 'ul') {
+        const li = document.createElement('li');
+        li.textContent = content;
+        
+        // If there's no active list or the active list is of a different type
+        if (!activeListElement || activeListElement.tagName.toLowerCase() !== currentType) {
+            activeListElement = document.createElement(currentType);
+            activeListElement.appendChild(li);
+            return activeListElement;
+        } else {
+            // Add to existing list
+            activeListElement.appendChild(li);
+            return null;
+        }
     } else {
+        // For non-list elements, clear any active list
+        activeListElement = null;
         const element = document.createElement(currentType);
         element.textContent = content;
         return element;
@@ -160,7 +199,9 @@ autocompleteTextarea.addEventListener('keydown', (e) => {
             e.preventDefault();
             // Handle content addition
             const noteElement = createNoteElement(textInput.trim());
-            noteContainer.appendChild(noteElement);
+            if (noteElement) { // Only append if there's a new element to add
+                noteContainer.appendChild(noteElement);
+            }
             autocompleteTextarea.value = '';
         }
     } else if (e.key === 'Tab' && suggestionsList.length > 0) {
@@ -180,6 +221,9 @@ autocompleteTextarea.addEventListener('keydown', (e) => {
             autocompleteTextarea.value = textInput;
             updateSuggestionDisplay();
         }
+    } else if (e.key === 'Escape') {
+        // Close current list if escape is pressed
+        activeListElement = null;
     }
 });
 
