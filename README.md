@@ -1,13 +1,13 @@
 # Remain things
 - Styling
-    - Textarea height adjustment
+    - Textarea height adjustment ✓
     - Proper Checklist styling
     - Proper spacing
     - Responsive
     - Typescale
 - Features
     - Saving
-    - Proper form enclosure for Checklist
+    - Proper form enclosure for Checklist ✓
     - Writting date
     - Edit content
     - Edit content order
@@ -17,3 +17,21 @@
     - Implement object
     - Responsive alternative to commands.
     - Paragraph by default execpt on list.
+    - nested list items
+    - Open and close (details / summary)
+    - Search
+    - History, control-z
+    - Exporting, PDF, Markdown, HTML
+    - Importing, Markdown, HTML, Evernote, OneNote
+    - Internal link
+    - Offline mode
+    - File embed
+    - Word editing : Bold, Highlight, Italics
+    - code block
+    - Folder section to manage notes
+    - Pinterest API Board
+- To fix:
+    - Object
+    - Unstyle the commands
+    - a lot
+    

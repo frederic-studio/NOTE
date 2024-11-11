@@ -3,7 +3,7 @@
 body {line-height: 1.5; -webkit-font-smoothing: antialiased;}
 img, picture, video, canvas, svg {display: block; max-width: 100%;}
 input, button, textarea, select {font: inherit;}
-p, h1, h2, h3, h4, h5, h6 {overflow-wrap: break-word;}
+p, h1, h2, h3, h4, h5, h6, li {overflow-wrap: break-word;}
 #root, #__next {isolation: isolate;}
 
 
@@ -13,7 +13,7 @@ body {
     font-family: "Inter", sans-serif;
     font-size: 1.5rem;
     max-width: 60ch;
-    padding-top: 4rem;
+    padding: 4rem 1rem; 
     margin: auto;
 }
 
@@ -24,6 +24,7 @@ textarea {
     background: none;
     padding: 0;
     border: none;
+    transition: all 0.2s;
 }
 
 textarea::placeholder {
@@ -38,6 +39,16 @@ textarea:focus-visible {
 
 #note {
     background-color: white;
+    text-wrap: balance;
+
+    *:not(li, label, input, ul:last-child, ol:last-child) {
+        transition: all 0.2s;
+        margin-bottom: 1rem;
+    }
+
+    li {
+        margin-bottom: 0.5rem;
+    }
 }
 
 .noteinput-container {
@@ -52,3 +63,67 @@ textarea:focus-visible {
 }
 
 
+.ul, .ol, .checklist {
+    padding-left: 2.5rem  !important ;
+    position: relative;
+    transition: all 0.2s;
+
+    &::before {
+        position: absolute;
+        color: black;
+    }
+}
+
+.h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.ul::before {
+    content: '•';
+    left: 1rem;
+}
+
+
+.ol::before {
+    content: attr(data-ol-count) ".";
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    width: 3rem;
+    left: -0.9rem;
+}
+
+.checklist::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid gainsboro;
+    border-radius: 0.25rem;
+    left: 0.5rem;
+    top: 0.75rem;
+}
+
+label {
+    display: block;
+    input {
+        margin-right: 1.5rem;
+        transform: translateX(0.5rem);
+        height: 1rem;
+        width: 1rem;
+        border: 2px solid gainsboro;
+        border-radius: 0.25rem;
+    }
+}

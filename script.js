@@ -2,18 +2,19 @@ const noteContainer = document.getElementById('note');
 const autocompleteTextarea = document.getElementById('autocomplete-textarea');
 const typedSpan = document.querySelector('.typed');
 const suggestionSpan = document.querySelector('.suggestion');
+const suggestionContainer = suggestionSpan.parentElement;
 
 const commands = {
     Text: [
-        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display text"}, 
+        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display"}, 
         {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline"}, 
         {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle"}, 
         {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph"}
     ],
     List: [
-        {Name: "Ordered", Type: "ol", Placeholder: "Type to add items to the Ordered list"},
-        {Name: "Unordered", Type: "ul", Placeholder: "Type to add items to the Unordered list"},
-        {Name: "Checklist", Type: "checklist", Placeholder: "Type to add items to the Checklist"}
+        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item"},
+        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item"},
+        {Name: "Checklist", Type: "checklist", Placeholder: "Type to add list item"}
     ],
     Object: [
         {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL"}, 
@@ -31,8 +32,9 @@ let currentType = 'p'; // Default type
 let isCommandMode = false;
 let checklistCounter = 1; // Counter for checklist IDs
 
-// Track the current active list element
+// Track the current active elements
 let activeListElement = null;
+let activeFormElement = null;
 
 function getFilteredSuggestions(input, commandList) {
     return Object.keys(commandList).filter(cmd => cmd.toLowerCase().startsWith(input.toLowerCase())).sort();
@@ -88,18 +90,30 @@ function handleSubSuggestions() {
 function applyCommand(command) {
     const commandObj = commands[currentMainCommand].find(cmd => cmd.Name === command);
     if (commandObj) {
-        // If switching to a different type, close any active list
-        if (currentType !== commandObj.Type && activeListElement) {
-            activeListElement = null;
+        // If switching to a different type, close any active elements
+        if (currentType !== commandObj.Type) {
+            if (currentType !== 'checklist') {
+                activeFormElement = null;
+            }
+            if (activeListElement) {
+                activeListElement = null;
+            }
         }
-        
+
         currentType = commandObj.Type;
         autocompleteTextarea.placeholder = commandObj.Placeholder;
         autocompleteTextarea.value = '';
+
+        // Set class based on the Type field
+        autocompleteTextarea.className = commandObj.Type;
+        suggestionContainer.className = commandObj.Type;
+
         resetSuggestions();
         isCommandMode = false;
     }
 }
+
+let olCounter = 1;  // Initialize the counter for ordered list items
 
 function createNoteElement(content) {
     if (currentType === 'img') {
@@ -114,9 +128,6 @@ function createNoteElement(content) {
         link.target = '_blank';
         return link;
     } else if (currentType === 'checklist') {
-        const form = document.createElement('form');
-        form.className = 'checklist-form';
-        
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
         
@@ -128,27 +139,45 @@ function createNoteElement(content) {
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(content));
         
-        form.appendChild(label);
         checklistCounter++;
         
-        return form;
+        // Create new form if there isn't an active one
+        if (!activeFormElement) {
+            activeFormElement = document.createElement('form');
+            activeFormElement.className = 'checklist-form';
+            activeFormElement.appendChild(label);
+            return activeFormElement;
+        } else {
+            // Add to existing form
+            activeFormElement.appendChild(label);
+            return null;
+        }
     } else if (currentType === 'ol' || currentType === 'ul') {
         const li = document.createElement('li');
-        li.textContent = content;
-        
-        // If there's no active list or the active list is of a different type
+
+        if (currentType === 'ol') {
+            li.textContent = content;
+            suggestionContainer?.setAttribute('data-ol-count', olCounter + 1);
+            olCounter++;
+        } else {
+            li.textContent = content;
+        }
+
         if (!activeListElement || activeListElement.tagName.toLowerCase() !== currentType) {
             activeListElement = document.createElement(currentType);
+            if (currentType === 'ol') suggestionContainer.setAttribute('data-ol-count', 2);
             activeListElement.appendChild(li);
             return activeListElement;
         } else {
-            // Add to existing list
             activeListElement.appendChild(li);
             return null;
         }
     } else {
-        // For non-list elements, clear any active list
+        // Reset active elements for non-list, non-checklist elements
         activeListElement = null;
+        activeFormElement = null;
+        olCounter = 1;
+
         const element = document.createElement(currentType);
         element.textContent = content;
         return element;
@@ -190,16 +219,14 @@ autocompleteTextarea.addEventListener('keydown', (e) => {
     } else if (e.key === 'Enter') {
         if (isCommandMode && suggestionsList.length > 0) {
             e.preventDefault();
-            // Handle command selection
             if (textInput.split('/').length === 3) {
                 const selectedSubCommand = suggestionsList[currentSuggestionIndex].Name;
                 applyCommand(selectedSubCommand);
             }
         } else if (!isCommandMode && textInput.trim()) {
             e.preventDefault();
-            // Handle content addition
             const noteElement = createNoteElement(textInput.trim());
-            if (noteElement) { // Only append if there's a new element to add
+            if (noteElement) {
                 noteContainer.appendChild(noteElement);
             }
             autocompleteTextarea.value = '';
@@ -208,24 +235,30 @@ autocompleteTextarea.addEventListener('keydown', (e) => {
         e.preventDefault();
         
         if (textInput.split('/').length === 2) {
-            // Handle main command completion
             const selectedCommand = suggestionsList[currentSuggestionIndex];
             textInput = `/${selectedCommand}/`;
             currentMainCommand = selectedCommand;
             autocompleteTextarea.value = textInput;
             handleSubSuggestions();
         } else if (textInput.split('/').length === 3) {
-            // Handle sub-command completion without applying it
             const selectedSubCommand = suggestionsList[currentSuggestionIndex].Name;
             textInput = `/${currentMainCommand}/${selectedSubCommand}`;
             autocompleteTextarea.value = textInput;
             updateSuggestionDisplay();
         }
     } else if (e.key === 'Escape') {
-        // Close current list if escape is pressed
+        // Close current active elements if escape is pressed
         activeListElement = null;
+        activeFormElement = null;
     }
 });
 
 // Clear the initial h1 placeholder
 noteContainer.innerHTML = '';
+
+autocompleteTextarea.addEventListener('input', autoResize);
+
+function autoResize() {
+    this.style.height = 'auto'
+    this.style.height = (this.scrollHeight) + "px";
+}
