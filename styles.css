@@ -7,7 +7,10 @@ p, h1, h2, h3, h4, h5, h6, li {overflow-wrap: break-word;}
 #root, #__next {isolation: isolate;}
 
 
-
+@font-face {
+    font-family: "Geist Mono";
+    src: url(fonts/GeistMonoVF.woff);
+}
 
 body {
     font-family: "Inter", sans-serif;
@@ -29,10 +32,10 @@ textarea {
 
 textarea::placeholder {
     font-style: italic;
-    color: hsl(0, 0, 35);
+    color: gainsboro;
 }
 
-textarea:focus-visible {
+textarea:focus-visible, input, input:focus-visible {
     border: none;
     outline: none;
 }
@@ -41,7 +44,7 @@ textarea:focus-visible {
     background-color: white;
     text-wrap: balance;
 
-    *:not(li, label, input, ul:last-child, ol:last-child) {
+    *:not(li, label, input, ul:last-child, ol:last-child, form:last-child) {
         transition: all 0.2s;
         margin-bottom: 1rem;
     }
@@ -125,5 +128,52 @@ label {
         width: 1rem;
         border: 2px solid gainsboro;
         border-radius: 0.25rem;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+div#command {
+    --animation: transform 0.75s cubic-bezier(0.77,0,0.18,1);;
+    position: relative;
+    margin-bottom: 4rem;
+    transform-style: preserve-3d;
+
+    input {
+    padding: 0.5rem 1rem;
+    position: absolute;
+    background-color: white;
+    width: 100%;
+    transform: rotateX(0deg);
+    transform-origin: top center;
+    transition: var(--animation);
+    }
+
+    .autocomplete {
+        font-family: "Geist Mono";
+        transform: rotateX(0deg);
+        transform-origin: top center;
+        transition: var(--animation);
+    }
+
+    .open {
+        transform: rotateX(90deg);
+        transition: var(--animation);
+
+        
+    }
+
+    .open1 {
+        transform: rotateX(-90deg);
+        transition: var(--animation);
+
+        
     }
 }

@@ -1,0 +1,317 @@
+*, *::before, *::after {box-sizing: border-box;}
+* {margin: 0;}
+body {line-height: 1.5; -webkit-font-smoothing: antialiased;}
+img, picture, video, canvas, svg {display: block; max-width: 100%;}
+input, button, textarea, select {font: inherit;}
+p, h1, h2, h3, h4, h5, h6, li {overflow-wrap: break-word;}
+#root, #__next {isolation: isolate;}
+input, button {background: none; border: none;}
+
+
+
+@font-face {
+    font-family: "Geist Mono";
+    src: url(fonts/GeistMonoVF.woff);
+}
+
+body {
+    font-family: "Inter", sans-serif;
+    font-size: 1rem;
+    max-width: 675px;
+    padding: 4rem 0.5rem; 
+    margin: auto;
+    background-color: hsl(0, 0%, 95%);
+}
+
+textarea {
+    width: min(100%, 60ch);
+    resize: none;
+    height: fit-content;
+    background: none;
+    padding: 0;
+    border: none;
+    transition: all 0.2s;
+}
+
+textarea::placeholder {
+    font-style: italic;
+    color: gray;
+}
+
+textarea:focus-visible, input, input:focus-visible {
+    border: none;
+    outline: none;
+}
+
+#note {
+    text-wrap: balance;
+
+    *:not(li, label, input, ul:last-child, ol:last-child, form:last-child) {
+        transition: all 0.2s;
+        margin-bottom: 1rem;
+    }
+
+    li {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.noteinput-container {
+    position: relative;
+    transition: all 0.2s;
+
+    div {
+        position: absolute;
+        top: 0;
+        z-index: -1;
+        color: gainsboro;
+    }
+}
+
+
+.ul, .ol, .checklist {
+    padding-left: 2.5rem  !important ;
+    position: relative;
+    transition: all 0.2s;
+
+    &::before {
+        position: absolute;
+        color: black;
+    }
+}
+
+.h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.ul::before {
+    content: '•';
+    left: 1rem;
+}
+
+
+.ol::before {
+    content: attr(data-ol-count) ".";
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    width: 3rem;
+    left: -0.9rem;
+}
+
+.checklist::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid gainsboro;
+    border-radius: 0.25rem;
+    left: 0.5rem;
+    top: 0.75rem;
+}
+
+#note {
+    label {
+        display: block;
+        input {
+            margin-right: 1.5rem;
+            transform: translateX(0.5rem);
+            height: 1rem;
+            width: 1rem;
+            border: 2px solid gainsboro;
+            border-radius: 0.25rem;
+        }
+    }
+}
+
+
+
+
+
+.cool {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.1s ease;
+    position: absolute;
+    inset: 0;
+    max-width: 675px;
+    pointer-events: none;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+    background: none;
+}
+
+.cool:focus-within {
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.3s cubic-bezier(0.77,0,0.18,1);;
+    pointer-events: all;
+}
+
+
+
+#autocomplete {
+    position: relative;
+    background-color: white;
+    border-radius: 0.5rem 0.5rem 0rem 0rem;
+    height: 3rem;
+    border-bottom: 1px solid hsl(0, 0%, 95%);
+
+
+    img {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: 1.5rem;
+    }
+
+    input {
+        padding: 0.5rem 3.5rem;
+        border-radius: 0.5rem;
+        background: none;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+#autocomplete >  span {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 3.5rem;
+    line-height: 1;
+
+    span.typed {
+        opacity: 0;
+    }
+    
+    span.suggestion {
+        color: gray;
+    }
+}
+
+
+#command {
+    border-radius: 0 0 0.5rem 0.5rem;
+    max-height: 400px;
+    overflow-y: scroll;
+    background-color: white;
+    scrollbar-color:  gainsboro white;
+
+    ul {
+        list-style: none;
+        padding: 0px;
+    }
+
+    h4 {
+        margin-bottom: 1rem;
+        color: hsl(0, 0%, 75%);
+        font-size:  700 1.125rem/1 Inter;
+    }
+
+    .container {
+        padding: 1.5rem;
+    }
+
+
+    .recent-content {
+        width: 100%;
+        display: flex;
+        overflow-x: scroll;
+        gap: 1rem;
+
+        li {
+            width: 100%;
+
+            button {
+                width: 190px;
+                text-align: left;
+                border-radius: 0.5rem;
+                border: 1px solid hsl(0, 0%, 95%);
+                padding: 0.5rem;
+                cursor: pointer;
+
+                span {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    font-size: 1.125rem;
+                    color: #595959;
+                }
+
+                h2 {
+                    margin-top: 1rem;
+                    line-height: 125%;
+                    font-size: 2rem;
+                }
+            }
+
+            button:hover,
+            button:focus {
+                outline: none;
+                background-color: hsl(0, 0%, 97%);
+                border: 1px solid hsl(0, 0%, 80%);
+                transition: all 0.2s;
+            }
+        }
+    }
+}
+
+.recent-content::-webkit-scrollbar {
+    display: none;
+}
+
+
+
+.container:not(:first-of-type) {
+    border-top: 1px solid hsl(0, 0%, 95%);
+}
+
+.component-item button {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    text-align: left;
+    
+    .component-item-text {
+        h5 {font: 400 1rem/1.2 Inter;}
+        p {font: 400 0.875rem/1.2 Inter; color: hsl(0, 0%, 75%);}
+    }
+
+    img {height: 3rem;}
+}
+
+
+.component-item:focus,
+.component-item:hover {
+    outline: 1px solid hsl(0, 0%, 80%);
+    background: hsl(0, 0%, 97%);
+    border-radius: 0.5rem;
+}
+
+
+
+.recent-content::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .recent-content,
+  #command {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
