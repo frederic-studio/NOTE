@@ -165,12 +165,17 @@ function addEventListener(e) {
 
     if (e.key === "/") {
         e.preventDefault();
+        e.target.blur();
         commandPaletteContainer.showPopover();
         resetCommandPalette();
         if (!window.matchMedia('(max-width: 600px)').matches) {
             commandInput.focus();
         }
     }
+}
+
+function focusTargetBack() {
+    targetNode.focus();
 }
 
 function handleBackspace(target) {
