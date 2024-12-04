@@ -76,7 +76,7 @@ function addItems(targetNode, newType) {
     newElement.setAttribute('data-placeholder', findCommandDetail(newElement.tagName.toLowerCase(), 'Placeholder'));
     newElement.focus();
    
-    if (empty && targetNode.tagName !== 'P') {
+    if (empty && newType && !targetNode.classList.contains('title-page')) {
         targetNode.remove();
     }
     return newElement;
@@ -165,18 +165,12 @@ function addEventListener(e) {
 
     if (e.key === "/") {
         e.preventDefault();
-        e.target.blur();
         commandPaletteContainer.showPopover();
+        commandInput.focus();
         resetCommandPalette();
-        if (!window.matchMedia('(max-width: 600px)').matches) {
-            commandInput.focus();
-        }
     }
 }
 
-function focusTargetBack() {
-    targetNode.focus();
-}
 
 function handleBackspace(target) {
 
