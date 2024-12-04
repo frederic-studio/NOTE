@@ -9,7 +9,7 @@ const commands = {
         {Name: "Display", Type: "h1", Placeholder: "Type to add a Display", subType: null}, 
         {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline", subType: null}, 
         {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle", subType: null}, 
-        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph", subType: null}
+        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph or press '/' to add new component", subType: null}
     ],
     List: [
         {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item", subType: '<li></li>'},
@@ -166,7 +166,10 @@ function addEventListener(e) {
     if (e.key === "/") {
         e.preventDefault();
         commandPaletteContainer.showPopover();
-        commandInput.focus();
+        resetCommandPalette();
+        if (!window.matchMedia('(max-width: 600px)').matches) {
+            commandInput.focus();
+        }
     }
 }
 
@@ -232,6 +235,95 @@ async function populateCommandPalette() {
     }
 }
 
+function resetCommandPalette() {
+    const sections = commandPalette.querySelectorAll('.command-section');
+    sections.forEach(section => {
+        section.style.display = '';
+        const items = section.querySelectorAll('.command-item');
+        items.forEach(item => {
+            item.style.display = '';
+        });
+    });
+    const selected = commandPalette.querySelector('.select');
+    if (selected) {
+        selected.classList.remove('select');
+    }
+}
+
+
+
+function filterCommandPalette(searchTerm) {
+    const sections = commandPalette.querySelectorAll('.command-section');
+    let firstMatch = null;
+
+    sections.forEach(section => {
+        const header = section.querySelector('h4');
+        const items = section.querySelectorAll('.command-item');
+        let sectionMatch = false;
+        const searchLower = searchTerm.toLowerCase();
+
+        if (header.textContent.toLowerCase().includes(searchLower)) {
+            sectionMatch = true;
+        }
+
+        let itemMatch = false;
+        items.forEach(item => {
+            const commandName = item.querySelector('h5').textContent.toLowerCase();
+            const commandType = item.querySelector('button').getAttribute('onclick').match(/'([^']+)'/)[1].toLowerCase();
+
+            if (sectionMatch || commandName.includes(searchLower) || commandType.includes(searchLower)) {
+                item.style.display = '';
+                if (!firstMatch) {
+                    firstMatch = item;
+                }
+                itemMatch = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        if (sectionMatch || itemMatch) {
+            section.style.display = '';
+        } else {
+            section.style.display = 'none';
+        }
+    });
+
+    if (firstMatch) {
+        firstMatch.classList.add('select');
+    }
+}
+
+function handleKeyNavigation(e) {
+    const selected = commandPalette.querySelector('.select');
+    let newSelected;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        newSelected = selected.nextElementSibling || selected.parentElement.firstElementChild;
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        newSelected = selected.previousElementSibling || selected.parentElement.lastElementChild;
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const commandType = selected.querySelector('button').getAttribute('onclick').match(/'([^']+)'/)[1];
+        addItems(targetNode, commandType);
+        commandPaletteContainer.hidePopover();
+        return;
+    }
+
+    if (newSelected) {
+        selected.classList.remove('select');
+        newSelected.classList.add('select');
+    }
+}
+
+commandInput.addEventListener('input', (e) => {
+    filterCommandPalette(e.target.value);
+});
+
+commandInput.addEventListener('keydown', handleKeyNavigation);
+
 // Initialize
 populateCommandPalette();
-commandInput.addEventListener('blur', (e) => {e.target.value = '';});
+commandInput.addEventListener('blur', (e) => { e.target.value = ''; });
