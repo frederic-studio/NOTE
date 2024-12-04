@@ -1,380 +1,228 @@
-const noteContainer = document.getElementById('note');
-const autocompleteTextarea = document.getElementById('autocomplete-textarea');
-const commandInput = document.getElementById('cool');
-const typedSpan = document.querySelector('.typed');
-const suggestionSpan = document.querySelector('.suggestion');
-const suggestionContainer = suggestionSpan.parentElement;
-const commandTypedSpan = document.querySelector('#autocomplete span .typed');
-const commandSuggestionSpan = document.querySelector('#autocomplete span .suggestion');
+const noteContainer = document.getElementById('note-container');
+const noteItems = noteContainer.children;
+const commandInput = document.querySelector('#command-search input');
+const commandPalette = document.getElementById('command-palette');
+const commandPaletteContainer = document.querySelector('.command-container');
 
 const commands = {
     Text: [
-        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display"}, 
-        {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline"}, 
-        {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle"}, 
-        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph"}
+        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display", subType: null}, 
+        {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline", subType: null}, 
+        {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle", subType: null}, 
+        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph", subType: null}
     ],
     List: [
-        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item"},
-        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item"},
-        {Name: "Checklist", Type: "checklist", Placeholder: "Type to add list item"}
+        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item", subType: '<li></li>'},
+        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item", subType: '<li></li>'},
+        {Name: "Checklist", Type: "form", Placeholder: "Type to add list item", subType: "<label><input type='checkbox'></label>"}
     ],
     Object: [
-        {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL"}, 
-        {Name: "Table", Type: "table", Placeholder: "Type to add content to the table"}, 
-        {Name: "Link", Type: "a", Placeholder: "Type or paste a URL"}
+        {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL", subType: null}, 
+        {Name: "Table", Type: "table", Placeholder: "Type to add content to the table", subType: null}, 
+        {Name: "Link", Type: "a", Placeholder: "Type or paste a URL", subType: null}
     ]
 };
 
-let textInput = '';
-let suggestionsList = [];
-let currentSuggestionIndex = 0;
-let currentMainCommand = '';
-let isCommandComplete = false;
-let currentType = 'p';
-let isCommandMode = false;
-let checklistCounter = 1;
-let activeListElement = null;
-let activeFormElement = null;
-let olCounter = 1;
+let targetNode;
 
-function switchToCommandMode() {
-    commandInput.value = '/';
-    commandInput.focus();
-    commandInput.setSelectionRange(1, 1);
-    handleMainSuggestions();
-    isCommandMode = true;
-}
-
-function switchToTextMode() {
-    autocompleteTextarea.focus();
-    isCommandMode = false;
-    resetSuggestions();
-}
-
-function getFilteredSuggestions(input, commandList) {
-    return Object.keys(commandList).filter(cmd => cmd.toLowerCase().startsWith(input.toLowerCase())).sort();
-}
-
-function updateSuggestionDisplay() {
-    const typedText = textInput;
-    let suggestionText = '';
-    
-    if (suggestionsList.length > 0) {
-        suggestionText = typeof suggestionsList[currentSuggestionIndex] === 'string' 
-            ? suggestionsList[currentSuggestionIndex]
-            : suggestionsList[currentSuggestionIndex].Name;
-    }
-
-    const remainingSuggestion = suggestionText.slice(typedText.split("/").pop().length);
-    
-    if (isCommandMode) {
-        commandTypedSpan.textContent = typedText;
-        commandSuggestionSpan.textContent = remainingSuggestion;
-    } else {
-        typedSpan.textContent = typedText;
-        suggestionSpan.textContent = remainingSuggestion;
-    }
-}
-
-function resetSuggestions() {
-    currentSuggestionIndex = 0;
-    suggestionsList = [];
-    typedSpan.textContent = '';
-    suggestionSpan.textContent = '';
-    commandTypedSpan.textContent = '';
-    commandSuggestionSpan.textContent = '';
-    isCommandComplete = false;
-}
-
-function handleMainSuggestions() {
-    const mainInput = textInput.slice(1);
-    suggestionsList = getFilteredSuggestions(mainInput, commands);
-    currentSuggestionIndex = 0;
-    currentMainCommand = '';
-    if (suggestionsList.length > 0) {
-        currentMainCommand = suggestionsList[0];
-    }
-    updateSuggestionDisplay();
-}
-
-function handleSubSuggestions() {
-    const subInput = textInput.split("/").pop();
-    const mainCommand = textInput.split("/")[1];
-    if (commands[mainCommand]) {
-        currentMainCommand = mainCommand;
-        suggestionsList = commands[mainCommand].filter(
-            sub => sub.Name.toLowerCase().startsWith(subInput.toLowerCase())
-        );
-        currentSuggestionIndex = 0;
-        updateSuggestionDisplay();
-    }
-}
-
-function applyCommand(command) {
-    const commandObj = commands[currentMainCommand].find(cmd => cmd.Name === command);
-    if (commandObj) {
-        if (currentType !== commandObj.Type) {
-            if (currentType !== 'checklist') {
-                activeFormElement = null;
-            }
-            if (activeListElement) {
-                activeListElement = null;
-            }
-        }
-
-        currentType = commandObj.Type;
-        autocompleteTextarea.placeholder = commandObj.Placeholder;
-        autocompleteTextarea.value = '';
-        commandInput.value = '';
-        autocompleteTextarea.parentElement.className = commandObj.Type;
-
-        resetSuggestions();
-        isCommandMode = false;
-    }
-}
-
-function createNoteElement(content) {
-    if (currentType === 'img') {
-        const img = document.createElement('img');
-        img.src = content;
-        img.alt = 'User added image';
-        return img;
-    } else if (currentType === 'a') {
-        const link = document.createElement('a');
-        link.href = content;
-        link.textContent = content;
-        link.target = '_blank';
-        return link;
-    } else if (currentType === 'checklist') {
-        const label = document.createElement('label');
-        const checkbox = document.createElement('input');
-        
-        checkbox.type = 'checkbox';
-        checkbox.id = `checkbox-${checklistCounter}`;
-        checkbox.name = `checkbox-${checklistCounter}`;
-        
-        label.htmlFor = `checkbox-${checklistCounter}`;
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(content));
-        
-        checklistCounter++;
-        
-        if (!activeFormElement) {
-            activeFormElement = document.createElement('form');
-            activeFormElement.className = 'checklist-form';
-            activeFormElement.appendChild(label);
-            return activeFormElement;
-        } else {
-            activeFormElement.appendChild(label);
-            return null;
-        }
-    } else if (currentType === 'ol' || currentType === 'ul') {
-        const li = document.createElement('li');
-
-        if (currentType === 'ol') {
-            li.textContent = content;
-            autocompleteTextarea.parentElement?.setAttribute('data-ol-count', olCounter + 1);
-            olCounter++;
-        } else {
-            li.textContent = content;
-        }
-
-        if (!activeListElement || activeListElement.tagName.toLowerCase() !== currentType) {
-            activeListElement = document.createElement(currentType);
-            if (currentType === 'ol') suggestionContainer.setAttribute('data-ol-count', 2);
-            activeListElement.appendChild(li);
-            return activeListElement;
-        } else {
-            activeListElement.appendChild(li);
-            return null;
-        }
-    } else {
-        activeListElement = null;
-        activeFormElement = null;
-        olCounter = 1;
-
-        const element = document.createElement(currentType);
-        element.textContent = content;
-        return element;
-    }
-}
-
-// Event Listeners
-autocompleteTextarea.addEventListener('input', (e) => {
-    textInput = e.target.value;
-    
-    if (textInput.startsWith('/') && textInput.length === 1) {
-        e.target.value = '';
-        switchToCommandMode();
-        return;
-    }
-    
-    if (!textInput) {
-        resetSuggestions();
-        return;
-    }
-    
-    resetSuggestions();
-    autoResize.call(autocompleteTextarea);
+const commandLookup = new Map();
+Object.keys(commands).forEach(category => {
+    commands[category].forEach(command => {
+        commandLookup.set(command.Type.toLowerCase(), { ...command, category });
+    });
 });
 
-commandInput.addEventListener('input', (e) => {
-    textInput = e.target.value;
-    
-    if (!textInput || !textInput.startsWith('/')) {
-        e.target.value = '/' + textInput;
-        textInput = e.target.value;
-    }
-    
-    const sections = textInput.split('/');
-    if (sections.length === 2) {
-        handleMainSuggestions();
-    } else if (sections.length === 3) {
-        handleSubSuggestions();
-    } else {
-        resetSuggestions();
-    }
-    
-    commandTypedSpan.textContent = textInput;
-    commandSuggestionSpan.textContent = suggestionSpan.textContent;
-});
+function findCommandDetail(type, detail = null) {
+    const command = commandLookup.get(type.toLowerCase());
+    return command ? (detail ? command[detail] : command.category) : null;
+}
 
-autocompleteTextarea.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' && suggestionsList.length > 0) {
-        e.preventDefault();
-        currentSuggestionIndex = (currentSuggestionIndex + 1) % suggestionsList.length;
-        updateSuggestionDisplay();
-    } else if (e.key === 'ArrowUp' && suggestionsList.length > 0) {
-        e.preventDefault();
-        currentSuggestionIndex = (currentSuggestionIndex - 1 + suggestionsList.length) % suggestionsList.length;
-        updateSuggestionDisplay();
-    } else if (e.key === 'Enter') {
-        if (!isCommandMode && textInput.trim()) {
+
+
+
+
+
+
+function addItems(targetNode, newType) {
+    let newElement;
+    const isInList = findCommandDetail(targetNode.parentNode.tagName.toLowerCase()) === 'List';
+    const empty = targetNode.textContent === '';
+    
+    // If the targetNode is a list item, handle it differently
+    if (isInList && !empty) {
+        return handleListItems(targetNode);
+    } 
+    
+    if (newType) {
+        commandPaletteContainer.hidePopover();
+        empty;
+
+        // If the newType is a list, handle it differently
+        if (findCommandDetail(newType) === 'List') {
+            return handleListItems(targetNode, newType);
+        }    
+        newElement = document.createElement(newType);
+    } else {
+        newElement = document.createElement('p');
+    }
+
+    // If the targetNode is in a list, insert the newElement after the list
+    if (targetNode.parentNode !== noteContainer) {
+        targetNode.parentNode.insertAdjacentElement('afterend', newElement);
+    } else {
+        targetNode.insertAdjacentElement('afterend', newElement);
+    }
+    newElement.setAttribute('contenteditable', 'true');
+    newElement.setAttribute('data-placeholder', findCommandDetail(newElement.tagName.toLowerCase(), 'Placeholder'));
+    newElement.focus();
+   
+    if (empty && targetNode.tagName !== 'p') {
+        targetNode.remove();
+    }
+    return newElement;
+}
+
+function handleListItems(targetNode, newType) {
+    const listType = newType ? newType.toLowerCase() : targetNode.parentNode.tagName.toLowerCase();
+    const subType = findCommandDetail(listType, "subType");
+    const listContainer = document.createElement(listType);
+    let newElement;
+
+    if(newType) {
+        listContainer.innerHTML = subType;
+        targetNode.insertAdjacentElement('afterend', listContainer);
+        newElement = targetNode.nextElementSibling.childNodes[0];
+    } else {
+        targetNode.insertAdjacentHTML('afterend', subType);
+        newElement = targetNode.nextElementSibling;
+    }
+    newElement.setAttribute('contenteditable', 'true');
+    newElement.setAttribute('data-placeholder', findCommandDetail(newElement.parentNode.tagName.toLowerCase(), 'Placeholder'));
+    newElement.focus();
+    if (targetNode.tagName !== targetNode.nextElementSibling.tagName) {
+        targetNode.remove();
+    }
+    return newElement
+}
+
+
+
+
+
+
+
+
+
+function caretPosition(element, action = 'get', position = 0) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+
+    if (action === 'get') {
+        const currentRange = selection.getRangeAt(0);
+        currentRange.setStart(element, 0);
+        return currentRange.toString().length;
+    } else if (action === 'set') {
+        if (position === 'start') {
+            range.setStart(element, 0);
+        } else if (position === 'end') {
+            range.selectNodeContents(element);
+            range.collapse(false);
+        } else {
+            range.setStart(element, position);
+        }
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+}
+
+noteContainer.addEventListener('focus', (e) => {
+    if (e.target.hasAttribute('contenteditable')) {
+        targetNode = e.target;
+        e.target.addEventListener('keydown', addEventListener);
+        e.target.addEventListener('blur', removeEventListener);
+    }
+}, true);
+
+function addEventListener(e) {
+    if (e.key === "Backspace") {
+        if (e.target.textContent.length === 1) {
+            e.target.innerHTML = '';
+        } else if (e.target.textContent.length === 0 && !e.target.classList.contains('title-page')) {
+            if (e.target.tagName !== 'P' && findCommandDetail(e.target.parentNode.tagName.toLowerCase()) !== 'List') {
+                addItems(e.target, 'p');
+            }
             e.preventDefault();
-            const noteElement = createNoteElement(textInput.trim());
-            if (noteElement) {
-                noteContainer.appendChild(noteElement);
-            }
-            autocompleteTextarea.value = '';
-        }
-    } else if (e.key === 'Escape') {
-        activeListElement = null;
-        activeFormElement = null;
-    }
-});
-
-commandInput.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' && suggestionsList.length > 0) {
-        e.preventDefault();
-        currentSuggestionIndex = (currentSuggestionIndex + 1) % suggestionsList.length;
-        updateSuggestionDisplay();
-    } else if (e.key === 'ArrowUp' && suggestionsList.length > 0) {
-        e.preventDefault();
-        currentSuggestionIndex = (currentSuggestionIndex - 1 + suggestionsList.length) % suggestionsList.length;
-        updateSuggestionDisplay();
-    } else if (e.key === 'Escape') {
-        e.target.value = '';
-        switchToTextMode();
-    } else if (e.key === 'Enter' && suggestionsList.length > 0) {
-        e.preventDefault();
-        if (textInput.split('/').length === 3) {
-            const selectedSubCommand = suggestionsList[currentSuggestionIndex].Name;
-            applyCommand(selectedSubCommand);
-            switchToTextMode();
-        }
-    } else if (e.key === 'Tab' && suggestionsList.length > 0) {
-        e.preventDefault();
-        
-        if (textInput.split('/').length === 2) {
-            const selectedCommand = suggestionsList[currentSuggestionIndex];
-            textInput = `/${selectedCommand}/`;
-            currentMainCommand = selectedCommand;
-            commandInput.value = textInput;
-            handleSubSuggestions();
-        } else if (textInput.split('/').length === 3) {
-            const selectedSubCommand = suggestionsList[currentSuggestionIndex].Name;
-            textInput = `/${currentMainCommand}/${selectedSubCommand}`;
-            commandInput.value = textInput;
-            updateSuggestionDisplay();
-            
-            commandTypedSpan.textContent = textInput;
-            commandSuggestionSpan.textContent = suggestionSpan.textContent;
+            handleBackspace(e.target);
         }
     }
-});
 
-function autoResize() {
-    this.style.height = 'auto';
-    this.style.height = this.scrollHeight + "px";
+    if (e.key === "Enter") {
+        e.preventDefault();
+        const newElement = addItems(targetNode);
+        targetNode = newElement;
+    }
+
+    if (e.key === "/") {
+        e.preventDefault();
+        commandPaletteContainer.showPopover();
+    }
 }
 
-noteContainer.innerHTML = '';
-autocompleteTextarea.addEventListener('input', autoResize);
+function handleBackspace(target) {
 
-
-
-
-
-function createQuickMenu(commands) {
-    const listMainCommand = document.createElement('ul');
-    const listSubCommand = document.createElement('ul')
-    const quickMenu = document.querySelector('.quick-menu');
-    listMainCommand.className = 'main-command-container';
-    listSubCommand.className = 'sub-command-container';
-
-    for (const [mainCommand, subCommands] of Object.entries(commands)) {
-        const mainCommandItem = document.createElement('li');
-        const mainCommandButton = document.createElement('button');
-
-        mainCommandButton.addEventListener("click", (e) => {
-            document.querySelectorAll('.main-command-container button').forEach(button => {
-                button.classList.remove("select");
-            });
-            mainCommandButton.classList.add("select");
-
-            const buttons = document.querySelectorAll("ul.main-command-container button")
-            const lists = document.querySelectorAll("ul.sub-command")
-            
-            buttons.forEach((button, index) => { 
-                if (button.classList.contains('select')) { 
-                    lists[index].classList.add('select'); 
-                } else {
-                    lists[index].classList.remove('select')
-                }
-            });
-        });
-
-        mainCommandButton.textContent = mainCommand;
-        mainCommandItem.appendChild(mainCommandButton);
-
-        const subCommandList = document.createElement('ul');
-
-        subCommands.forEach(subCommand => {
-            subCommandList.className = `sub-command`;
-            const subCommandItem = document.createElement('li');
-            const subCommandButton = document.createElement('button');
-            subCommandButton.textContent = subCommand.Name;
-            subCommandItem.appendChild(subCommandButton);
-            subCommandList.appendChild(subCommandItem);
-        });
-
-        listMainCommand.appendChild(mainCommandItem);
-        listSubCommand.appendChild(subCommandList)
+    if (target.parentNode && target.parentNode !== noteContainer && target.parentNode.firstElementChild === target) {
+        if (target.previousElementSibling) {
+            caretPosition(target.previousElementSibling.parentNode, 'set', 'end');
+            target.parentNode.previousElementSibling.focus();
+        }
+        caretPosition(target.parentNode.previousElementSibling, 'set', 'end');
+        target.parentNode.previousElementSibling.focus();
+        target.parentNode.remove();
+    } else {
+        let previousElement = target.previousElementSibling;
+        if (previousElement && !previousElement.hasAttribute('contenteditable')) {
+            previousElement = previousElement.lastElementChild;
+        }
+        if (previousElement) {
+            caretPosition(previousElement, 'set', 'end');
+            previousElement.focus();
+        }
+        target.remove();
     }
-    quickMenu.appendChild(listMainCommand);
-    quickMenu.appendChild(listSubCommand)
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    createQuickMenu(commands);
+function removeEventListener(e) {
+    e.target.removeEventListener('keydown', addEventListener);
+    e.target.removeEventListener('blur', removeEventListener);
+}
 
-    // Sélection par défaut de la première main-command et de sa sub-command associée
-    const buttons = document.querySelectorAll("ul.main-command-container button");
-    const subCommandLists = document.querySelectorAll("ul.sub-command");
+function populateCommandPalette() {
+    Object.keys(commands).forEach(category => {
+        const container = document.createElement('div');
+        container.classList.add('command-section');
+        const header = document.createElement('h4');
+        header.textContent = category;
+        container.appendChild(header);
+        const ul = document.createElement('ul');
+        commands[category].forEach(command => {
+            const li = document.createElement('li');
+            li.classList.add('command-item');
+            li.innerHTML = `
+                <button onclick="addItems(targetNode, '${command.Type}')">
+                    <img src="icon/${command.Name.toLowerCase()}.svg" alt="${command.Name} icon">
+                    <div class="command-item-text">
+                        <h5>${command.Name}</h5>
+                        <p>${command.Placeholder}</p>
+                    </div>
+                </button>`;
+            ul.appendChild(li);
+        });
+        container.appendChild(ul);
+        commandPalette.appendChild(container);
+    });
+}
 
-    if (buttons.length > 0 && subCommandLists.length > 0) {
-        buttons[0].classList.add("select");
-        subCommandLists[0].classList.add("select");
-    }
-});
+// Initialize
+populateCommandPalette();
+commandInput.addEventListener('blur', (e) => {e.target.value = '';});

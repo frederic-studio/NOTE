@@ -2,168 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Note</title>
+    <title>Note Editor</title>
     <link rel="stylesheet" href="test.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Radio+Canada:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="note"></div>
-    
-<div style="position: relative;">
-        <div class="noteinput-container" data-ol-count="1">
-            <textarea name="noteinput"  id="autocomplete-textarea" placeholder="Type to add a Paragraph" spellcheck="false"></textarea>
-        </div>
-        
-        <div class="cool">
-            <div id="autocomplete">
-                <img src="icon/search.svg" alt="search icon">
-                <input type="text" id="cool" tabindex="-1" autocomplete="off" spellcheck="false" placeholder="Search component to add..">
-                <span><span class="typed"></span><span class="suggestion"></span></span>
-            </div> 
-            <div id="command">  
-        
-                <div class="container">
-                    <h4>Recent change</h4>
-                    <ul class="recent-content">
-                        <li><button><span class="Object"><img src="icon/object.svg" alt="object icon"> Object</span><h2>Image</h2></button></li>
-                        <li><button><span class="Text"><img src="icon/text.svg" alt="text icon">Text</span><h2>Display</h2></button></li>
-                        <li><button><span class="List"><img src="icon/list.svg" alt="list icon icon">List</span><h2>Checklist</h2></button></li>
-                    </ul>
-                </div>
-        
-                <div class="container">
-                    <h4>Section title</h4>
-                    <ul>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="container">
-                    <h4>Section title</h4>
-                    <ul>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="container">
-                    <h4>Section title</h4>
-                    <ul>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                        <li class="component-item">
-                            <button>
-                                <img src="icon/image.svg" alt="alt text">
-                                <div class="component-item-text">
-                                    <h5>Label</h5>
-                                    <p class="component-item-description">Description of the label</p>
-                                </div>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-            </div>
-        </div>
-</div>
-    
+    <div id="note-container">
+        <h1 data-placeholder="Nouvelle page" contenteditable="true" class="title-page"></h1>
+    </div>
+    <div class="command-container" popover>
+        <div id="command-search">
+            <img src="icon/search.svg" alt="search icon">
+            <input type="text" tabindex="-1" autocomplete="off" spellcheck="false" placeholder="Search component to add...">
+        </div> 
+        <div id="command-palette"></div>
+    </div>
     <script src="test.js"></script>
 </body>
 </html>
-
-
