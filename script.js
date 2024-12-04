@@ -76,7 +76,7 @@ function addItems(targetNode, newType) {
     newElement.setAttribute('data-placeholder', findCommandDetail(newElement.tagName.toLowerCase(), 'Placeholder'));
     newElement.focus();
    
-    if (empty && targetNode.tagName !== 'p') {
+    if (empty && targetNode.tagName !== 'P') {
         targetNode.remove();
     }
     return newElement;
