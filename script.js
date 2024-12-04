@@ -1,264 +1,237 @@
-const noteContainer = document.getElementById('note');
-const autocompleteTextarea = document.getElementById('autocomplete-textarea');
-const typedSpan = document.querySelector('.typed');
-const suggestionSpan = document.querySelector('.suggestion');
-const suggestionContainer = suggestionSpan.parentElement;
+const noteContainer = document.getElementById('note-container');
+const noteItems = noteContainer.children;
+const commandInput = document.querySelector('#command-search input');
+const commandPalette = document.getElementById('command-palette');
+const commandPaletteContainer = document.querySelector('#command-container');
 
 const commands = {
     Text: [
-        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display"}, 
-        {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline"}, 
-        {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle"}, 
-        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph"}
+        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display", subType: null}, 
+        {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline", subType: null}, 
+        {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle", subType: null}, 
+        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph", subType: null}
     ],
     List: [
-        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item"},
-        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item"},
-        {Name: "Checklist", Type: "checklist", Placeholder: "Type to add list item"}
+        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item", subType: '<li></li>'},
+        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item", subType: '<li></li>'},
+        {Name: "Checklist", Type: "form", Placeholder: "Type to add list item", subType: "<label><input type='checkbox'></label>"}
     ],
     Object: [
-        {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL"}, 
-        {Name: "Table", Type: "table", Placeholder: "Type to add content to the table"}, 
-        {Name: "Link", Type: "a", Placeholder: "Type or paste a URL"}
+        {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL", subType: null}, 
+        {Name: "Table", Type: "table", Placeholder: "Type to add content to the table", subType: null}, 
+        {Name: "Link", Type: "a", Placeholder: "Type or paste a URL", subType: null}
     ]
 };
 
-let textInput = '';
-let suggestionsList = [];
-let currentSuggestionIndex = 0;
-let currentMainCommand = '';
-let isCommandComplete = false;
-let currentType = 'p'; // Default type
-let isCommandMode = false;
-let checklistCounter = 1; // Counter for checklist IDs
+let targetNode;
 
-// Track the current active elements
-let activeListElement = null;
-let activeFormElement = null;
-
-function getFilteredSuggestions(input, commandList) {
-    return Object.keys(commandList).filter(cmd => cmd.toLowerCase().startsWith(input.toLowerCase())).sort();
-}
-
-function updateSuggestionDisplay() {
-    const typedText = textInput;
-    let suggestionText = '';
-    
-    if (suggestionsList.length > 0) {
-        suggestionText = typeof suggestionsList[currentSuggestionIndex] === 'string' 
-            ? suggestionsList[currentSuggestionIndex]
-            : suggestionsList[currentSuggestionIndex].Name;
-    }
-
-    const remainingSuggestion = suggestionText.slice(typedText.split("/").pop().length);
-    typedSpan.textContent = textInput;
-    suggestionSpan.textContent = remainingSuggestion;
-}
-
-function resetSuggestions() {
-    currentSuggestionIndex = 0;
-    suggestionsList = [];
-    typedSpan.textContent = '';
-    suggestionSpan.textContent = '';
-    isCommandComplete = false;
-}
-
-function handleMainSuggestions() {
-    const mainInput = textInput.slice(1);
-    suggestionsList = getFilteredSuggestions(mainInput, commands);
-    currentSuggestionIndex = 0;
-    currentMainCommand = '';
-    if (suggestionsList.length > 0) {
-        currentMainCommand = suggestionsList[0];
-    }
-    updateSuggestionDisplay();
-}
-
-function handleSubSuggestions() {
-    const subInput = textInput.split("/").pop();
-    const mainCommand = textInput.split("/")[1];
-    if (commands[mainCommand]) {
-        currentMainCommand = mainCommand;
-        suggestionsList = commands[mainCommand].filter(
-            sub => sub.Name.toLowerCase().startsWith(subInput.toLowerCase())
-        );
-        currentSuggestionIndex = 0;
-        updateSuggestionDisplay();
-    }
-}
-
-function applyCommand(command) {
-    const commandObj = commands[currentMainCommand].find(cmd => cmd.Name === command);
-    if (commandObj) {
-        // If switching to a different type, close any active elements
-        if (currentType !== commandObj.Type) {
-            if (currentType !== 'checklist') {
-                activeFormElement = null;
-            }
-            if (activeListElement) {
-                activeListElement = null;
-            }
-        }
-
-        currentType = commandObj.Type;
-        autocompleteTextarea.placeholder = commandObj.Placeholder;
-        autocompleteTextarea.value = '';
-
-        // Set class based on the Type field
-        autocompleteTextarea.className = commandObj.Type;
-        suggestionContainer.className = commandObj.Type;
-
-        resetSuggestions();
-        isCommandMode = false;
-    }
-}
-
-let olCounter = 1;  // Initialize the counter for ordered list items
-
-function createNoteElement(content) {
-    if (currentType === 'img') {
-        const img = document.createElement('img');
-        img.src = content;
-        img.alt = 'User added image';
-        return img;
-    } else if (currentType === 'a') {
-        const link = document.createElement('a');
-        link.href = content;
-        link.textContent = content;
-        link.target = '_blank';
-        return link;
-    } else if (currentType === 'checklist') {
-        const label = document.createElement('label');
-        const checkbox = document.createElement('input');
-        
-        checkbox.type = 'checkbox';
-        checkbox.id = `checkbox-${checklistCounter}`;
-        checkbox.name = `checkbox-${checklistCounter}`;
-        
-        label.htmlFor = `checkbox-${checklistCounter}`;
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(content));
-        
-        checklistCounter++;
-        
-        // Create new form if there isn't an active one
-        if (!activeFormElement) {
-            activeFormElement = document.createElement('form');
-            activeFormElement.className = 'checklist-form';
-            activeFormElement.appendChild(label);
-            return activeFormElement;
-        } else {
-            // Add to existing form
-            activeFormElement.appendChild(label);
-            return null;
-        }
-    } else if (currentType === 'ol' || currentType === 'ul') {
-        const li = document.createElement('li');
-
-        if (currentType === 'ol') {
-            li.textContent = content;
-            suggestionContainer?.setAttribute('data-ol-count', olCounter + 1);
-            olCounter++;
-        } else {
-            li.textContent = content;
-        }
-
-        if (!activeListElement || activeListElement.tagName.toLowerCase() !== currentType) {
-            activeListElement = document.createElement(currentType);
-            if (currentType === 'ol') suggestionContainer.setAttribute('data-ol-count', 2);
-            activeListElement.appendChild(li);
-            return activeListElement;
-        } else {
-            activeListElement.appendChild(li);
-            return null;
-        }
-    } else {
-        // Reset active elements for non-list, non-checklist elements
-        activeListElement = null;
-        activeFormElement = null;
-        olCounter = 1;
-
-        const element = document.createElement(currentType);
-        element.textContent = content;
-        return element;
-    }
-}
-
-autocompleteTextarea.addEventListener('input', (e) => {
-    textInput = e.target.value;
-    isCommandMode = textInput.startsWith('/');
-    
-    if (!textInput) {
-        resetSuggestions();
-        return;
-    }
-    
-    if (isCommandMode) {
-        const sections = textInput.split('/');
-        if (sections.length === 2) {
-            handleMainSuggestions();
-        } else if (sections.length === 3) {
-            handleSubSuggestions();
-        } else {
-            resetSuggestions();
-        }
-    } else {
-        resetSuggestions();
-    }
+const commandLookup = new Map();
+Object.keys(commands).forEach(category => {
+    commands[category].forEach(command => {
+        commandLookup.set(command.Type.toLowerCase(), { ...command, category });
+    });
 });
 
-autocompleteTextarea.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' && suggestionsList.length > 0) {
-        e.preventDefault();
-        currentSuggestionIndex = (currentSuggestionIndex + 1) % suggestionsList.length;
-        updateSuggestionDisplay();
-    } else if (e.key === 'ArrowUp' && suggestionsList.length > 0) {
-        e.preventDefault();
-        currentSuggestionIndex = (currentSuggestionIndex - 1 + suggestionsList.length) % suggestionsList.length;
-        updateSuggestionDisplay();
-    } else if (e.key === 'Enter') {
-        if (isCommandMode && suggestionsList.length > 0) {
-            e.preventDefault();
-            if (textInput.split('/').length === 3) {
-                const selectedSubCommand = suggestionsList[currentSuggestionIndex].Name;
-                applyCommand(selectedSubCommand);
-            }
-        } else if (!isCommandMode && textInput.trim()) {
-            e.preventDefault();
-            const noteElement = createNoteElement(textInput.trim());
-            if (noteElement) {
-                noteContainer.appendChild(noteElement);
-            }
-            autocompleteTextarea.value = '';
-        }
-    } else if (e.key === 'Tab' && suggestionsList.length > 0) {
-        e.preventDefault();
-        
-        if (textInput.split('/').length === 2) {
-            const selectedCommand = suggestionsList[currentSuggestionIndex];
-            textInput = `/${selectedCommand}/`;
-            currentMainCommand = selectedCommand;
-            autocompleteTextarea.value = textInput;
-            handleSubSuggestions();
-        } else if (textInput.split('/').length === 3) {
-            const selectedSubCommand = suggestionsList[currentSuggestionIndex].Name;
-            textInput = `/${currentMainCommand}/${selectedSubCommand}`;
-            autocompleteTextarea.value = textInput;
-            updateSuggestionDisplay();
-        }
-    } else if (e.key === 'Escape') {
-        // Close current active elements if escape is pressed
-        activeListElement = null;
-        activeFormElement = null;
-    }
-});
-
-// Clear the initial h1 placeholder
-noteContainer.innerHTML = '';
-
-autocompleteTextarea.addEventListener('input', autoResize);
-
-function autoResize() {
-    this.style.height = 'auto'
-    this.style.height = (this.scrollHeight) + "px";
+function findCommandDetail(type, detail = null) {
+    const command = commandLookup.get(type.toLowerCase());
+    return command ? (detail ? command[detail] : command.category) : null;
 }
+
+
+
+
+
+
+
+function addItems(targetNode, newType) {
+    let newElement;
+    const isInList = findCommandDetail(targetNode.parentNode.tagName.toLowerCase()) === 'List';
+    const empty = targetNode.textContent === '';
+    
+    // If the targetNode is a list item, handle it differently
+    if (isInList && !empty) {
+        return handleListItems(targetNode);
+    } 
+    
+    if (newType) {
+        commandPaletteContainer.hidePopover();
+        empty;
+
+        // If the newType is a list, handle it differently
+        if (findCommandDetail(newType) === 'List') {
+            return handleListItems(targetNode, newType);
+        }    
+        newElement = document.createElement(newType);
+    } else {
+        newElement = document.createElement('p');
+    }
+
+    // If the targetNode is in a list, insert the newElement after the list
+    if (targetNode.parentNode !== noteContainer) {
+        targetNode.parentNode.insertAdjacentElement('afterend', newElement);
+    } else {
+        targetNode.insertAdjacentElement('afterend', newElement);
+    }
+    newElement.setAttribute('contenteditable', 'true');
+    newElement.setAttribute('data-placeholder', findCommandDetail(newElement.tagName.toLowerCase(), 'Placeholder'));
+    newElement.focus();
+   
+    if (empty && targetNode.tagName !== 'p') {
+        targetNode.remove();
+    }
+    return newElement;
+}
+
+function handleListItems(targetNode, newType) {
+    const listType = newType ? newType.toLowerCase() : targetNode.parentNode.tagName.toLowerCase();
+    const subType = findCommandDetail(listType, "subType");
+    const listContainer = document.createElement(listType);
+    let newElement;
+
+    if(newType) {
+        listContainer.innerHTML = subType;
+        targetNode.insertAdjacentElement('afterend', listContainer);
+        newElement = targetNode.nextElementSibling.childNodes[0];
+    } else {
+        targetNode.insertAdjacentHTML('afterend', subType);
+        newElement = targetNode.nextElementSibling;
+    }
+    newElement.setAttribute('contenteditable', 'true');
+    newElement.setAttribute('data-placeholder', findCommandDetail(newElement.parentNode.tagName.toLowerCase(), 'Placeholder'));
+    newElement.focus();
+    if (targetNode.tagName !== targetNode.nextElementSibling.tagName) {
+        targetNode.remove();
+    }
+    return newElement
+}
+
+
+
+
+
+
+
+
+
+function caretPosition(element, action = 'get', position = 0) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+
+    if (action === 'get') {
+        const currentRange = selection.getRangeAt(0);
+        currentRange.setStart(element, 0);
+        return currentRange.toString().length;
+    } else if (action === 'set') {
+        if (position === 'start') {
+            range.setStart(element, 0);
+        } else if (position === 'end') {
+            range.selectNodeContents(element);
+            range.collapse(false);
+        } else {
+            range.setStart(element, position);
+        }
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+}
+
+noteContainer.addEventListener('focus', (e) => {
+    if (e.target.hasAttribute('contenteditable')) {
+        targetNode = e.target;
+        e.target.addEventListener('keydown', addEventListener);
+        e.target.addEventListener('blur', removeEventListener);
+    }
+}, true);
+
+function addEventListener(e) {
+    if (e.key === "Backspace") {
+        if (e.target.textContent.length === 1) {
+            e.target.innerHTML = '';
+        } else if (e.target.textContent.length === 0 && !e.target.classList.contains('title-page')) {
+            if (e.target.tagName !== 'P' && findCommandDetail(e.target.parentNode.tagName.toLowerCase()) !== 'List') {
+                addItems(e.target, 'p');
+            }
+            e.preventDefault();
+            handleBackspace(e.target);
+        }
+    }
+
+    if (e.key === "Enter") {
+        e.preventDefault();
+        const newElement = addItems(targetNode);
+        targetNode = newElement;
+    }
+
+    if (e.key === "/") {
+        e.preventDefault();
+        commandPaletteContainer.showPopover();
+        commandInput.focus();
+    }
+}
+
+function handleBackspace(target) {
+
+    if (target.parentNode && target.parentNode !== noteContainer && target.parentNode.firstElementChild === target) {
+        if (target.previousElementSibling) {
+            caretPosition(target.previousElementSibling.parentNode, 'set', 'end');
+            target.parentNode.previousElementSibling.focus();
+        }
+        caretPosition(target.parentNode.previousElementSibling, 'set', 'end');
+        target.parentNode.previousElementSibling.focus();
+        target.parentNode.remove();
+    } else {
+        let previousElement = target.previousElementSibling;
+        if (previousElement && !previousElement.hasAttribute('contenteditable')) {
+            previousElement = previousElement.lastElementChild;
+        }
+        if (previousElement) {
+            caretPosition(previousElement, 'set', 'end');
+            previousElement.focus();
+        }
+        target.remove();
+    }
+}
+
+function removeEventListener(e) {
+    e.target.removeEventListener('keydown', addEventListener);
+    e.target.removeEventListener('blur', removeEventListener);
+}
+
+async function fetchSVG(name) {
+    const response = await fetch(`icon/${name}.svg`);
+    if (response.ok) {
+        return await response.text();
+    } else {
+        console.error(`Failed to fetch SVG: ${name}`);
+        return '';
+    }
+}
+
+async function populateCommandPalette() {
+    for (const category of Object.keys(commands)) {
+        const container = document.createElement('div');
+        container.classList.add('command-section');
+        const header = document.createElement('h4');
+        header.textContent = category;
+        container.appendChild(header);
+        const ul = document.createElement('ul');
+        for (const command of commands[category]) {
+            const li = document.createElement('li');
+            li.classList.add('command-item');
+            const svgContent = await fetchSVG(command.Name.toLowerCase());
+            li.innerHTML = `
+                <button onclick="addItems(targetNode, '${command.Type}')">
+                    ${svgContent}
+                    <h5>${command.Name}</h5>
+                </button>`;
+            ul.appendChild(li);
+        }
+        container.appendChild(ul);
+        commandPalette.appendChild(container);
+    }
+}
+
+// Initialize
+populateCommandPalette();
+commandInput.addEventListener('blur', (e) => {e.target.value = '';});
