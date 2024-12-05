@@ -166,7 +166,7 @@ function addEventListener(e) {
     if (e.key === "/") {
         e.preventDefault();
         commandPaletteContainer.showPopover();
-        commandInput.focus();
+        commandPaletteContainer.focus();
         resetCommandPalette();
     }
 }
