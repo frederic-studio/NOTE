@@ -144,6 +144,7 @@ function caretPosition(element, action = 'get', position = 0) {
 noteContainer.addEventListener('focus', (e) => {
     if (e.target.hasAttribute('contenteditable')) {
         targetNode = e.target;
+        caretPosition(e.target, 'set', 'end');
         e.target.addEventListener('keydown', addEventListener);
         e.target.addEventListener('blur', removeEventListener);
     }
@@ -171,7 +172,8 @@ function addEventListener(e) {
     if (e.key === "/") {
         e.preventDefault();
         commandPaletteContainer.showPopover();
-        commandInput.focus();
+        e.target.blur();
+        commandPaletteContainer.focus();
         resetCommandPalette();
     }
 }
