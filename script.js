@@ -12,9 +12,9 @@ const commands = {
         {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph or press '/' to add new component", subType: null}
     ],
     List: [
-        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item", subType: '<li></li>'},
-        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item", subType: '<li></li>'},
-        {Name: "Checklist", Type: "form", Placeholder: "Type to add list item", subType: "<label><input type='checkbox'></label>"}
+        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item", subType: '<li contenteditable="true"></li>'},
+        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item", subType: '<li contenteditable="true"></li>'},
+        {Name: "Checklist", Type: "form", Placeholder: "Type to add list item", subType: "<label><input type='checkbox'><span contenteditable='true'></span></label>"}
     ],
     Object: [
         {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL", subType: null}, 
@@ -83,26 +83,31 @@ function addItems(targetNode, newType) {
 }
 
 function handleListItems(targetNode, newType) {
-    const listType = newType ? newType.toLowerCase() : targetNode.parentNode.tagName.toLowerCase();
+    const listType = newType ? newType.toLowerCase() : targetNode.closest('ol, ul, form').tagName.toLowerCase();
     const subType = findCommandDetail(listType, "subType");
-    const listContainer = document.createElement(listType);
     let newElement;
 
-    if(newType) {
+    if (newType) {
+        const listContainer = document.createElement(listType);
         listContainer.innerHTML = subType;
         targetNode.insertAdjacentElement('afterend', listContainer);
-        newElement = targetNode.nextElementSibling.childNodes[0];
+        newElement = listContainer.querySelector('[contenteditable="true"]');
     } else {
         targetNode.insertAdjacentHTML('afterend', subType);
-        newElement = targetNode.nextElementSibling;
+        newElement = targetNode.nextElementSibling.querySelector('[contenteditable="true"]');
+        if (!newElement) {
+            newElement = targetNode.nextElementSibling;
+        }
     }
-    newElement.setAttribute('contenteditable', 'true');
-    newElement.setAttribute('data-placeholder', findCommandDetail(newElement.parentNode.tagName.toLowerCase(), 'Placeholder'));
+
+    newElement.setAttribute('data-placeholder', findCommandDetail(listType, 'Placeholder'));
     newElement.focus();
-    if (targetNode.tagName !== targetNode.nextElementSibling.tagName) {
+
+    if (targetNode.textContent === '' && !targetNode.classList.contains('title-page')) {
         targetNode.remove();
     }
-    return newElement
+
+    return newElement;
 }
 
 
