@@ -6,20 +6,20 @@ const commandPaletteContainer = document.querySelector('#command-container');
 
 const commands = {
     Text: [
-        {Name: "Display", Type: "h1", Placeholder: "Type to add a Display", subType: null}, 
-        {Name: "Headline", Type: "h2", Placeholder: "Type to add a Headline", subType: null}, 
-        {Name: "Subtitle", Type: "h3", Placeholder: "Type to add a Subtitle", subType: null}, 
-        {Name: "Paragraph", Type: "p", Placeholder: "Type to add a Paragraph or press '/' to add new component", subType: null}
+        {Name: "display", Type: "h1"}, 
+        {Name: "headline", Type: "h2"}, 
+        {Name: "subtitle", Type: "h3"}, 
+        {Name: "paragraph", Type: "p"}
     ],
     List: [
-        {Name: "Ordered", Type: "ol", Placeholder: "Type to add list item", subType: '<li contenteditable="true"></li>'},
-        {Name: "Unordered", Type: "ul", Placeholder: "Type to add list item", subType: '<li contenteditable="true"></li>'},
-        {Name: "Checklist", Type: "form", Placeholder: "Type to add list item", subType: "<label><input type='checkbox'><span contenteditable='true'></span></label>"}
+        {Name: "ordered", Type: "ol"},
+        {Name: "unordered", Type: "ul"},
+        {Name: "checklist", Type: "form"}
     ],
     Object: [
-        {Name: "Image", Type: "img", Placeholder: "Type or paste an image URL", subType: null}, 
-        {Name: "Table", Type: "table", Placeholder: "Type to add content to the table", subType: null}, 
-        {Name: "Link", Type: "a", Placeholder: "Type or paste a URL", subType: null}
+        {Name: "image", Type: "img"}, 
+        {Name: "table", Type: "table"}, 
+        {Name: "link", Type: "a"}
     ]
 };
 
@@ -37,78 +37,116 @@ function findCommandDetail(type, detail = null) {
     return command ? (detail ? command[detail] : command.category) : null;
 }
 
-
-
-
-
-
-
 function addItems(targetNode, newType) {
-    let newElement;
-    const isInList = findCommandDetail(targetNode.parentNode.tagName.toLowerCase()) === 'List';
-    const empty = targetNode.textContent === '';
-    
-    // If the targetNode is a list item, handle it differently
-    if (isInList && !empty) {
-        return handleListItems(targetNode);
-    } 
-    
-    if (newType) {
-        commandPaletteContainer.hidePopover();
-        empty;
+    let item;
+    console.log(targetNode);
+    commandPaletteContainer.hidePopover();
+    if (targetNode.hasAttribute('data-type') && !newType) {
+        item = targetNode.getAttribute('data-type');
+        console.log(item);
+    } else {
+        item = newType ? newType : targetNode.tagName.toLowerCase();
+        console.log(item);
+    }
+    let itemCategory = findCommandDetail(item, 'category');
+    switch (itemCategory) {
+        case 'Text': { return addText(targetNode, newType); }
+        case 'List': { return addList(targetNode, newType); }
+        case 'Object': { return addObject(targetNode, newType); }
+        default: { console.error(`Unknown category: ${itemCategory}`); return null; }
+    }
+}
 
-        // If the newType is a list, handle it differently
-        if (findCommandDetail(newType) === 'List') {
-            return handleListItems(targetNode, newType);
-        }    
+function addText(targetNode, newType) {
+    let newElement
+    let placeholder
+    if (newType) {
         newElement = document.createElement(newType);
     } else {
         newElement = document.createElement('p');
     }
-
-    // If the targetNode is in a list, insert the newElement after the list
-    if (targetNode.parentNode !== noteContainer) {
-        targetNode.parentNode.insertAdjacentElement('afterend', newElement);
-    } else {
-        targetNode.insertAdjacentElement('afterend', newElement);
-    }
+    placeholder = newElement.tagName.toLowerCase() === 'p' ? 
+    'Type to add a paragraph or press "/" to add a different component' :
+    `Type to add a ${findCommandDetail(newElement.tagName.toLowerCase(), 'Name')}`;
+    targetNode.parentNode === noteContainer ? targetNode.insertAdjacentElement('afterend', newElement) : targetNode.closest('#note-container').appendChild(newElement);
     newElement.setAttribute('contenteditable', 'true');
-    newElement.setAttribute('data-placeholder', findCommandDetail(newElement.tagName.toLowerCase(), 'Placeholder'));
+    newElement.setAttribute('data-placeholder', placeholder);
     newElement.focus();
-   
-    if (empty && newType && !targetNode.classList.contains('title-page')) {
+    if (newType && targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page')) {
         targetNode.remove();
     }
+        
     return newElement;
 }
 
-function handleListItems(targetNode, newType) {
-    const listType = newType ? newType.toLowerCase() : targetNode.closest('ol, ul, form').tagName.toLowerCase();
-    const subType = findCommandDetail(listType, "subType");
-    let newElement;
+function addList(targetNode, newType) {
+    let newElement = newType ? newType : targetNode.getAttribute('data-type');
+    let templateId = `template-${findCommandDetail(newElement, 'Name')}`;
+    let template = document.getElementById(templateId);
+    let clone = template.content.cloneNode(true);
+    let newItem
 
     if (newType) {
-        const listContainer = document.createElement(listType);
-        listContainer.innerHTML = subType;
-        targetNode.insertAdjacentElement('afterend', listContainer);
-        newElement = listContainer.querySelector('[contenteditable="true"]');
+        newItem = clone.firstElementChild;
+        targetNode.insertAdjacentElement('afterend', newItem);
+    } else if (targetNode.textContent.length === 0) {
+        addItems(targetNode, 'p');
+        targetNode.parentNode !== newElement ? targetNode.parentElement.remove() : targetNode.remove();
+        return
     } else {
-        targetNode.insertAdjacentHTML('afterend', subType);
-        newElement = targetNode.nextElementSibling.querySelector('[contenteditable="true"]');
-        if (!newElement) {
-            newElement = targetNode.nextElementSibling;
-        }
+        fun = clone.firstElementChild.children[0];
+        targetNode.closest(newElement).appendChild(fun);
+        newItem = fun.querySelector('[contenteditable]') || fun;
     }
-
-    newElement.setAttribute('data-placeholder', findCommandDetail(listType, 'Placeholder'));
-    newElement.focus();
-
-    if (targetNode.textContent === '' && !targetNode.classList.contains('title-page')) {
+    newItem.hasAttribute('contenteditable') ? newItem.focus() : newItem.querySelector('[contenteditable]').focus();
+    if (newType && targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page')) {
         targetNode.remove();
     }
-
-    return newElement;
+    return newItem;
 }
+
+function handleBackspace(target) {
+
+    if (target.parentNode && target.parentNode !== noteContainer && target.parentNode.firstElementChild === target) {
+        if (target.previousElementSibling) {
+            caretPosition(target.previousElementSibling.parentNode, 'set', 'end');
+            target.parentNode.previousElementSibling.focus();
+        }
+        caretPosition(target.parentNode.previousElementSibling, 'set', 'end');
+        target.parentNode.previousElementSibling.focus();
+        target.parentNode.remove();
+    } else {
+        let previousElement = target.previousElementSibling;
+        if (previousElement && !previousElement.hasAttribute('contenteditable')) {
+            previousElement = previousElement.lastElementChild;
+        }
+        if (previousElement) {
+            caretPosition(previousElement, 'set', 'end');
+            previousElement.focus();
+        }
+        target.remove();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -142,13 +180,16 @@ function caretPosition(element, action = 'get', position = 0) {
 }
 
 noteContainer.addEventListener('focus', (e) => {
-    if (e.target.hasAttribute('contenteditable')) {
-        targetNode = e.target;
-        caretPosition(e.target, 'set', 'end');
-        e.target.addEventListener('keydown', addEventListener);
-        e.target.addEventListener('blur', removeEventListener);
-    }
-}, true);
+    let editableElement = e.target.closest('[contenteditable="true"]');
+    if (editableElement) {
+        targetNode = editableElement;
+        caretPosition(editableElement, 'set', 'end');
+        editableElement.addEventListener('keydown', addEventListener);
+        editableElement.addEventListener('blur', removeEventListener);
+        }
+    },
+    true
+  );
 
 function addEventListener(e) {
     if (e.key === "Backspace") {
@@ -173,32 +214,8 @@ function addEventListener(e) {
         e.preventDefault();
         commandPaletteContainer.showPopover();
         e.target.blur();
-        commandPaletteContainer.focus();
+        commandInput.focus();
         resetCommandPalette();
-    }
-}
-
-
-function handleBackspace(target) {
-
-    if (target.parentNode && target.parentNode !== noteContainer && target.parentNode.firstElementChild === target) {
-        if (target.previousElementSibling) {
-            caretPosition(target.previousElementSibling.parentNode, 'set', 'end');
-            target.parentNode.previousElementSibling.focus();
-        }
-        caretPosition(target.parentNode.previousElementSibling, 'set', 'end');
-        target.parentNode.previousElementSibling.focus();
-        target.parentNode.remove();
-    } else {
-        let previousElement = target.previousElementSibling;
-        if (previousElement && !previousElement.hasAttribute('contenteditable')) {
-            previousElement = previousElement.lastElementChild;
-        }
-        if (previousElement) {
-            caretPosition(previousElement, 'set', 'end');
-            previousElement.focus();
-        }
-        target.remove();
     }
 }
 
@@ -327,6 +344,10 @@ function handleKeyNavigation(e) {
 commandInput.addEventListener('input', (e) => {
     filterCommandPalette(e.target.value);
 });
+
+function focusTargetBack() {
+    targetNode.focus();
+}
 
 commandInput.addEventListener('keydown', handleKeyNavigation);
 

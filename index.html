@@ -28,6 +28,28 @@
         </div> 
         <div id="command-palette"></div>
     </div>
+
+    <template id="template-ordered">
+        <ol>
+            <li data-placeholder="Type to add an item" data-type="ol" contenteditable="true"></li>
+        </ol>
+    </template>
+
+    <template id="template-unordered">
+        <ul>
+            <li data-placeholder="Type to add an item" data-type="ul" contenteditable="true"></li>
+        </ul>
+    </template>
+
+    <template id="template-checklist">
+        <form>
+            <div>
+                <input type="checkbox">
+                <label data-placeholder="Type to add a checklist item" data-type="form" contenteditable="true"></label>
+            </div>
+        </form>
+    </template>
+
     <script src="script.js"></script>
 </body>
 </html>

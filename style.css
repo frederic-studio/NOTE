@@ -46,7 +46,7 @@ body {
         min-height: 16px;
     }
 
-    *:not(li, label, input, ul:last-child, ol:last-child, form:last-child) {
+    *:not(li, form  *, ul:last-child, ol:last-child, form:last-child) {
         transition: all 0.2s;
         margin-bottom: 1rem;
     }
@@ -67,18 +67,10 @@ body {
     content: '';
 }
 
-label {
-    display: block;
-    position: relative;
-    padding-left: 1.5rem;
-    z-index: 2;
-    input {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        transform: translateY(-50%);
-        z-index: 1;
-    }
+form > div {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 *::placeholder {
