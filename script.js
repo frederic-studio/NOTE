@@ -28,26 +28,18 @@ let targetNode;
 const commandLookup = new Map();
 Object.keys(commands).forEach(category => {
     commands[category].forEach(command => {
-        commandLookup.set(command.Type.toLowerCase(), { ...command, category });
+        commandLookup.set(command.Name, { ...command, category });
     });
 });
 
-function findCommandDetail(type, detail = null) {
-    const command = commandLookup.get(type.toLowerCase());
+function findCommandDetail(name, detail = null) {
+    const command = commandLookup.get(name);
     return command ? (detail ? command[detail] : command.category) : null;
 }
 
 function addItems(targetNode, newType) {
-    let item;
-    console.log(targetNode);
     commandPaletteContainer.hidePopover();
-    if (targetNode.hasAttribute('data-type') && !newType) {
-        item = targetNode.getAttribute('data-type');
-        console.log(item);
-    } else {
-        item = newType ? newType : targetNode.tagName.toLowerCase();
-        console.log(item);
-    }
+    let item = newType || targetNode.getAttribute('data-name');
     let itemCategory = findCommandDetail(item, 'category');
     switch (itemCategory) {
         case 'Text': { return addText(targetNode, newType); }
@@ -58,102 +50,120 @@ function addItems(targetNode, newType) {
 }
 
 function addText(targetNode, newType) {
-    let newElement
-    let placeholder
-    if (newType) {
-        newElement = document.createElement(newType);
-    } else {
-        newElement = document.createElement('p');
-    }
-    placeholder = newElement.tagName.toLowerCase() === 'p' ? 
+    let newElement = document.createElement(findCommandDetail(newType, 'Type') || 'p');
+    let placeholder = newElement.tagName === 'P' ? 
     'Type to add a paragraph or press "/" to add a different component' :
-    `Type to add a ${findCommandDetail(newElement.tagName.toLowerCase(), 'Name')}`;
+    `Type to add a ${newType}`;
     targetNode.parentNode === noteContainer ? targetNode.insertAdjacentElement('afterend', newElement) : targetNode.closest('#note-container').appendChild(newElement);
     newElement.setAttribute('contenteditable', 'true');
+    newElement.setAttribute('data-name', newType || 'paragraph');
     newElement.setAttribute('data-placeholder', placeholder);
     newElement.focus();
-    if (newType && targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page')) {
-        targetNode.remove();
-    }
-        
+    removeEmptyNode(targetNode);
     return newElement;
 }
 
 function addList(targetNode, newType) {
-    let newElement = newType ? newType : targetNode.getAttribute('data-type');
-    let templateId = `template-${findCommandDetail(newElement, 'Name')}`;
-    let template = document.getElementById(templateId);
+    let newItem = newType || targetNode.getAttribute('data-name');
+    let template = document.getElementById(`template-${newItem}`);
     let clone = template.content.cloneNode(true);
-    let newItem
+    let newElement;
 
     if (newType) {
-        newItem = clone.firstElementChild;
-        targetNode.insertAdjacentElement('afterend', newItem);
+        newElement = clone.firstElementChild;
+        targetNode.insertAdjacentElement('afterend', newElement);
+        removeEmptyNode(targetNode);
     } else if (targetNode.textContent.length === 0) {
-        addItems(targetNode, 'p');
-        targetNode.parentNode !== newElement ? targetNode.parentElement.remove() : targetNode.remove();
-        return
+        console.log('targetNode', targetNode);
+        return addItems(targetNode, 'paragraph');
     } else {
-        fun = clone.firstElementChild.children[0];
-        targetNode.closest(newElement).appendChild(fun);
-        newItem = fun.querySelector('[contenteditable]') || fun;
+        let e = clone.firstElementChild.children[0];
+        targetNode.parentNode.closest(`[data-name='${newItem}']`).appendChild(e);
+        newElement = e.querySelector('[contenteditable]') || e;
     }
-    newItem.hasAttribute('contenteditable') ? newItem.focus() : newItem.querySelector('[contenteditable]').focus();
-    if (newType && targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page')) {
-        targetNode.remove();
-    }
-    return newItem;
+
+    newElement.hasAttribute('contenteditable') 
+        ? newElement.focus() 
+        : newElement.querySelector('[contenteditable]').focus();
+    return newElement;
 }
+
+
+
+function removeEmptyNode(targetNode) {
+    if (targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page')) {
+        let ancestor = targetNode.parentNode.closest(`[data-name="${targetNode.getAttribute('data-name')}"]`);
+        if (targetNode.parentNode === noteContainer) {
+            targetNode.remove();
+        } else if (ancestor) {
+            let childToRemove = Array.from(ancestor.children).find(child => child.contains(targetNode));
+            if (childToRemove) {
+                if (ancestor.children.length > 1) {
+                    childToRemove.remove();
+                } else {
+                    ancestor.remove();
+                }
+            }
+        }
+    }  
+}
+
 
 function handleBackspace(target) {
+    let newElement;
+    let targetParent = target.parentNode.closest(`[data-name='${target.getAttribute('data-name')}']`);
 
-    if (target.parentNode && target.parentNode !== noteContainer && target.parentNode.firstElementChild === target) {
-        if (target.previousElementSibling) {
-            caretPosition(target.previousElementSibling.parentNode, 'set', 'end');
-            target.parentNode.previousElementSibling.focus();
+
+    if (target.previousElementSibling?.querySelector('[contenteditable]')) {
+        console.log('Case 1: Previous sibling has contenteditable');
+        let cool = target.previousElementSibling.querySelectorAll('[contenteditable]');
+        newElement = Array.from(cool).pop() || cool;
+        target.remove();
+    } else if (targetParent) {
+        console.log('Case 2: Parent has nested target found');
+        currentNode = target
+
+        if (currentNode.parentElement !== targetParent) {
+            while(currentNode && currentNode.parentNode !== targetParent) {
+            currentNode = currentNode.parentNode;
+            }
+        } else {
+            currentNode = target;
         }
-        caretPosition(target.parentNode.previousElementSibling, 'set', 'end');
-        target.parentNode.previousElementSibling.focus();
-        target.parentNode.remove();
+
+        if (targetParent.children.length > 1) {
+            console.log('Case 2.1: Parent has multiple children');
+
+            if (targetParent.children[0] === currentNode) {
+                console.log('Case 2.1.1: Current node is first child');
+                newElement = targetParent.previousElementSibling.querySelector('[contenteditable]') || targetParent.previousElementSibling;
+            } else {
+                console.log('Case 2.1.2: Current node is not first child');
+                newElement = currentNode.previousElementSibling.querySelector('[contenteditable]') || currentNode.previousElementSibling;
+            }
+            currentNode.remove();
+        } else {
+          console.log('Case 2.2: Parent has only one child');
+          addItems(target, 'paragraph');
+            targetParent.remove();
+          return;
+        }
     } else {
-        let previousElement = target.previousElementSibling;
-        if (previousElement && !previousElement.hasAttribute('contenteditable')) {
-            previousElement = previousElement.lastElementChild;
-        }
-        if (previousElement) {
-            caretPosition(previousElement, 'set', 'end');
-            previousElement.focus();
-        }
+        console.log('Case 3: No parent or sibling, fallback to previous sibling');
+        // Fallback si aucun parent n'est trouvé
+        newElement = target.previousElementSibling?.querySelector('[contenteditable]') || target.previousElementSibling;
         target.remove();
     }
+
+    if (newElement) {
+        caretPosition(newElement, 'set', 'end'); // Positionner le curseur à la fin
+        newElement.focus(); // Focus sur le nouvel élément
+    } else {
+        console.warn('No valid element found for newElement');
+    }
+
+    return newElement;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function caretPosition(element, action = 'get', position = 0) {
@@ -196,8 +206,8 @@ function addEventListener(e) {
         if (e.target.textContent.length === 1) {
             e.target.innerHTML = '';
         } else if (e.target.textContent.length === 0 && !e.target.classList.contains('title-page')) {
-            if (e.target.tagName !== 'P' && findCommandDetail(e.target.parentNode.tagName.toLowerCase()) !== 'List') {
-                addItems(e.target, 'p');
+            if (e.target.tagName !== 'P' && findCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
+                addItems(e.target, 'paragraph');
             }
             e.preventDefault();
             handleBackspace(e.target);
@@ -218,6 +228,8 @@ function addEventListener(e) {
         resetCommandPalette();
     }
 }
+
+
 
 function removeEventListener(e) {
     e.target.removeEventListener('keydown', addEventListener);
@@ -247,7 +259,7 @@ async function populateCommandPalette() {
             li.classList.add('command-item');
             const svgContent = await fetchSVG(command.Name.toLowerCase());
             li.innerHTML = `
-                <button onclick="addItems(targetNode, '${command.Type}')">
+                <button onclick="addItems(targetNode, '${command.Name}')">
                     ${svgContent}
                     <h5>${command.Name}</h5>
                 </button>`;

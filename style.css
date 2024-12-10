@@ -56,7 +56,7 @@ body {
     }
 }
 
-#note-container  *:empty:not(p)::after,
+#note-container  *[contenteditable]:empty:not(p)::after,
 #note-container  p:focus:empty::after {
     content: attr(data-placeholder);
     display: inline;

@@ -12,7 +12,7 @@
 </head>
 <body>
     <div id="note-container">
-        <h1 data-placeholder="Nouvelle page" contenteditable="true" class="title-page"></h1>
+        <h1 data-placeholder="Nouvelle page" data-name="display" contenteditable="true" class="title-page"></h1>
     </div>
     <div id="command-container" popover>
         <div id="command-search">
@@ -30,22 +30,22 @@
     </div>
 
     <template id="template-ordered">
-        <ol>
-            <li data-placeholder="Type to add an item" data-type="ol" contenteditable="true"></li>
+        <ol data-name="ordered">
+            <li data-placeholder="Type to add an item" data-name="ordered" contenteditable="true"></li>
         </ol>
     </template>
 
     <template id="template-unordered">
-        <ul>
-            <li data-placeholder="Type to add an item" data-type="ul" contenteditable="true"></li>
+        <ul data-name="unordered">
+            <li data-placeholder="Type to add an item" data-name="unordered" contenteditable="true"></li>
         </ul>
     </template>
 
     <template id="template-checklist">
-        <form>
+        <form data-name="checklist">
             <div>
                 <input type="checkbox">
-                <label data-placeholder="Type to add a checklist item" data-type="form" contenteditable="true"></label>
+                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true"></label>
             </div>
         </form>
     </template>
