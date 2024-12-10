@@ -3,6 +3,7 @@ const noteItems = noteContainer.children;
 const commandInput = document.querySelector('#command-search input');
 const commandPalette = document.getElementById('command-palette');
 const commandPaletteContainer = document.querySelector('#command-container');
+let targetNode;
 
 const commands = {
     Text: [
@@ -38,7 +39,6 @@ function findCommandDetail(name, detail = null) {
 
 function addItems(targetNode, newType) {
     commandPaletteContainer.hidePopover();
-    if (newType === targetNode.getAttribute('data-name')) {return;}
     let item = newType || targetNode.getAttribute('data-name');
     let itemCategory = findCommandDetail(item, 'category');
     switch (itemCategory) {
@@ -72,7 +72,7 @@ function addList(targetNode, newType) {
 
     if (newType) {
         newElement = clone.firstElementChild;
-        targetNode.closest('#note-container').appendChild(newElement);
+        targetNode.insertAdjacentElement('afterend', newElement);
         removeEmptyNode(targetNode, newType);
     } else if (targetNode.textContent.length === 0) {
         console.log('targetNode', targetNode);
@@ -112,7 +112,7 @@ function removeEmptyNode(targetNode, newType) {
 
 function handleBackspace(target) {
     let newElement;
-    let targetParent = target.parentNode ? target.parentNode.closest(`[data-name='${target.getAttribute('data-name')}']`) : null;
+    let targetParent = target.parentNode.closest(`[data-name='${target.getAttribute('data-name')}']`);
 
 
     if (target.previousElementSibling?.querySelector('[contenteditable]')) {
@@ -365,8 +365,10 @@ commandInput.addEventListener('input', (e) => {
 });
 
 function focusTargetBack() {
-    targetNode.focus();
+    targetNode|| noteContainer.lastElementChild.focus();
 }
+
+
 
 commandInput.addEventListener('keydown', handleKeyNavigation);
 
