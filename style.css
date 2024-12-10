@@ -28,10 +28,8 @@ input, button {background: none; border: none;}
 }
 
 
-
 body {
     font-family: "Radio Canada Big", sans-serif;
-    font-size: 1rem;
     padding: 4rem 0.5rem; 
     background-color: var(--darkerthandark);
     color: var(--dark);
@@ -41,31 +39,21 @@ body {
     text-wrap: stable;
     width: min(100% - 1rem, 60ch);
     margin: auto;
-
-    * {
-        min-height: 16px;
+    > * {
+        margin: 0.5rem 0;
     }
 
-    *:not(li, form  *, ul:last-child, ol:last-child, form:last-child) {
-        transition: all 0.2s;
-        margin-bottom: 1rem;
-    }
-
-    li {
-        margin-bottom: 0.5rem;
-    }
 }
 
 #note-container  *[contenteditable]:empty:not(p)::after,
-#note-container  p:focus:empty::after {
+#note-container  p[contenteditable]:focus:empty::after {
     content: attr(data-placeholder);
+    color: var(--verylightgray);
     display: inline;
-    color: var(--lightgray);
+    font-style: italic;
 }
 
-#note-container p:empty::after {
-    content: '';
-}
+
 
 form > div {
     display: flex;
@@ -73,37 +61,28 @@ form > div {
     align-items: center;
 }
 
-*::placeholder {
-    color: var(--lightgray);
-}
-
 svg path {
     fill: var(--lightgray);
 }
 
-#command-container {
-    position: absolute;
-    pointer-events: none;
-    background: none;
-}
+
+
+
 
 #command-container:popover-open {
-    transition: all 0.3s cubic-bezier(0.77,0,0.18,1);
-    pointer-events: all;
-    outline: 1px solid var(--verylightgray);
-    outline-offset: 0px;
-    border-radius: 0.5rem;
     padding: 0px;
-    border: none;
-    width: min(100% - 2rem, 600px);
     margin: auto;
+    width: min(100% - 2rem, 600px); 
+
     backdrop-filter: blur(4rem);
     background-color: hsla(225, 15%, 100%, 0.01);
+    outline: 1px solid var(--verylightgray);
+    border-radius: 0.5rem;
+    border: none;
 }
 
 #command-search {
     position: relative;
-    border-radius: 0.5rem 0.5rem 0rem 0rem;
     height: 3rem;
     border-bottom: 1px solid var(--verylightgray);
     width: 100%;
@@ -122,6 +101,7 @@ svg path {
         right: 1.75rem;
         height: 1.25rem;
         width: 1.25rem;
+        cursor: pointer;
     }
 
     input {
@@ -175,7 +155,8 @@ svg path {
     border-radius: 0.5rem;
     text-align: left;
     width: 100%;
-    h5 {font: 500 1rem/1.2 "Radio Canada Big", sans-serif; color: var(--dark);}
+    cursor: pointer;
+    h5 {font: 500 1rem/1.2 "Radio Canada Big", sans-serif; color: var(--dark); text-transform: capitalize;}
 }
 
 .command-item:focus-within,

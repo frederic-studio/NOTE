@@ -91,7 +91,7 @@ function addList(targetNode, newType) {
 
 
 function removeEmptyNode(targetNode) {
-    if (targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page')) {
+    if (targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page') && targetNode.tagName !== 'P') {
         let ancestor = targetNode.parentNode.closest(`[data-name="${targetNode.getAttribute('data-name')}"]`);
         if (targetNode.parentNode === noteContainer) {
             targetNode.remove();
