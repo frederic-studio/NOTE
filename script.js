@@ -23,7 +23,6 @@ const commands = {
     ]
 };
 
-let targetNode;
 
 const commandLookup = new Map();
 Object.keys(commands).forEach(category => {
@@ -39,6 +38,7 @@ function findCommandDetail(name, detail = null) {
 
 function addItems(targetNode, newType) {
     commandPaletteContainer.hidePopover();
+    if (newType === targetNode.getAttribute('data-name')) {return;}
     let item = newType || targetNode.getAttribute('data-name');
     let itemCategory = findCommandDetail(item, 'category');
     switch (itemCategory) {
@@ -50,6 +50,7 @@ function addItems(targetNode, newType) {
 }
 
 function addText(targetNode, newType) {
+    console.log('addText', targetNode, targetNode.parentNode, newType);
     let newElement = document.createElement(findCommandDetail(newType, 'Type') || 'p');
     let placeholder = newElement.tagName === 'P' ? 
     'Type to add a paragraph or press "/" to add a different component' :
@@ -59,7 +60,7 @@ function addText(targetNode, newType) {
     newElement.setAttribute('data-name', newType || 'paragraph');
     newElement.setAttribute('data-placeholder', placeholder);
     newElement.focus();
-    removeEmptyNode(targetNode);
+    removeEmptyNode(targetNode, newType);
     return newElement;
 }
 
@@ -71,8 +72,8 @@ function addList(targetNode, newType) {
 
     if (newType) {
         newElement = clone.firstElementChild;
-        targetNode.insertAdjacentElement('afterend', newElement);
-        removeEmptyNode(targetNode);
+        targetNode.closest('#note-container').appendChild(newElement);
+        removeEmptyNode(targetNode, newType);
     } else if (targetNode.textContent.length === 0) {
         console.log('targetNode', targetNode);
         return addItems(targetNode, 'paragraph');
@@ -90,8 +91,8 @@ function addList(targetNode, newType) {
 
 
 
-function removeEmptyNode(targetNode) {
-    if (targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page') && targetNode.tagName !== 'P') {
+function removeEmptyNode(targetNode, newType) {
+    if (targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page') && newType) {
         let ancestor = targetNode.parentNode.closest(`[data-name="${targetNode.getAttribute('data-name')}"]`);
         if (targetNode.parentNode === noteContainer) {
             targetNode.remove();
@@ -111,7 +112,7 @@ function removeEmptyNode(targetNode) {
 
 function handleBackspace(target) {
     let newElement;
-    let targetParent = target.parentNode.closest(`[data-name='${target.getAttribute('data-name')}']`);
+    let targetParent = target.parentNode ? target.parentNode.closest(`[data-name='${target.getAttribute('data-name')}']`) : null;
 
 
     if (target.previousElementSibling?.querySelector('[contenteditable]')) {
@@ -144,8 +145,9 @@ function handleBackspace(target) {
             currentNode.remove();
         } else {
           console.log('Case 2.2: Parent has only one child');
+          console.log('target', target, target.parentNode);
           addItems(target, 'paragraph');
-            targetParent.remove();
+          targetParent.remove();
           return;
         }
     } else {
@@ -164,6 +166,11 @@ function handleBackspace(target) {
 
     return newElement;
 }
+
+
+
+
+
 
 
 function caretPosition(element, action = 'get', position = 0) {
