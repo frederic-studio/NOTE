@@ -1,6 +1,5 @@
 const noteContainer = document.getElementById('note-container');
-const noteItems = noteContainer.children;
-const commandInput = document.querySelector('#command-search input');
+const commandInput = document.getElementById('command-input');
 const commandPalette = document.getElementById('command-palette');
 const commandPaletteContainer = document.querySelector('#command-container');
 let targetNode;
@@ -55,7 +54,8 @@ function addText(targetNode, newType) {
     let placeholder = newElement.tagName === 'P' ? 
     'Type to add a paragraph or press "/" to add a different component' :
     `Type to add a ${newType}`;
-    targetNode.parentNode === noteContainer ? targetNode.insertAdjacentElement('afterend', newElement) : targetNode.closest('#note-container').appendChild(newElement);
+    const ancestor = targetNode.closest('#note-container > *');
+    ancestor.insertAdjacentElement('afterend', newElement) || targetNode.insertAdjacentElement('afterend', newElement);
     newElement.setAttribute('contenteditable', 'true');
     newElement.setAttribute('data-name', newType || 'paragraph');
     newElement.setAttribute('data-placeholder', placeholder);
@@ -72,10 +72,10 @@ function addList(targetNode, newType) {
 
     if (newType) {
         newElement = clone.firstElementChild;
-        targetNode.insertAdjacentElement('afterend', newElement);
+        const ancestor = targetNode.closest('#note-container > *');
+        ancestor.insertAdjacentElement('afterend', newElement) || targetNode.insertAdjacentElement('afterend', newElement);
         removeEmptyNode(targetNode, newType);
-    } else if (targetNode.textContent.length === 0) {
-        console.log('targetNode', targetNode);
+    } else if (!targetNode.textContent) {
         return addItems(targetNode, 'paragraph');
     } else {
         let e = clone.firstElementChild.children[0];
@@ -134,7 +134,6 @@ function handleBackspace(target) {
 
         if (targetParent.children.length > 1) {
             console.log('Case 2.1: Parent has multiple children');
-
             if (targetParent.children[0] === currentNode) {
                 console.log('Case 2.1.1: Current node is first child');
                 newElement = targetParent.previousElementSibling.querySelector('[contenteditable]') || targetParent.previousElementSibling;
@@ -145,7 +144,6 @@ function handleBackspace(target) {
             currentNode.remove();
         } else {
           console.log('Case 2.2: Parent has only one child');
-          console.log('target', target, target.parentNode);
           addItems(target, 'paragraph');
           targetParent.remove();
           return;
@@ -196,19 +194,14 @@ function caretPosition(element, action = 'get', position = 0) {
     }
 }
 
-noteContainer.addEventListener('focus', (e) => {
+noteContainer.addEventListener('keydown', (e) => {
     let editableElement = e.target.closest('[contenteditable="true"]');
-    if (editableElement) {
-        targetNode = editableElement;
-        caretPosition(editableElement, 'set', 'end');
-        editableElement.addEventListener('keydown', addEventListener);
-        editableElement.addEventListener('blur', removeEventListener);
-        }
-    },
-    true
-  );
+    if (!editableElement) return;
+    targetNode = editableElement;
+    handleKeydown(e);
+});
 
-function addEventListener(e) {
+function handleKeydown(e) {
     if (e.key === "Backspace") {
         if (e.target.textContent.length === 1) {
             e.target.innerHTML = '';
@@ -236,35 +229,40 @@ function addEventListener(e) {
     }
 }
 
-
-
-function removeEventListener(e) {
-    e.target.removeEventListener('keydown', addEventListener);
-    e.target.removeEventListener('blur', removeEventListener);
-}
-
-async function fetchSVG(name) {
-    const response = await fetch(`icon/${name}.svg`);
-    if (response.ok) {
-        return await response.text();
-    } else {
-        console.error(`Failed to fetch SVG: ${name}`);
-        return '';
-    }
+async function fetchSVG(commandName) {
+    const svgPromises = commandName.map(async (name) => {
+        try {
+            const response = await fetch(`icon/${name}.svg`);
+            return response.ok ? await response.text() : null;   
+        } catch (error) {
+            console.error(`Failed to fetch SVG: ${name}`, error);
+            return null;
+        }
+    });
+    return await Promise.all(svgPromises);
 }
 
 async function populateCommandPalette() {
-    for (const category of Object.keys(commands)) {
+    const allCommands = Object.values(commands).flat();
+    const commandNames = allCommands.map(cmd => cmd.Name);
+    const svgs = await fetchSVG(commandNames);
+
+    for (const [category, categoryCommands] of Object.entries(commands)) {
         const container = document.createElement('div');
         container.classList.add('command-section');
+
         const header = document.createElement('h4');
         header.textContent = category;
         container.appendChild(header);
+
         const ul = document.createElement('ul');
-        for (const command of commands[category]) {
+
+        for (const command of categoryCommands) {
             const li = document.createElement('li');
             li.classList.add('command-item');
-            const svgContent = await fetchSVG(command.Name.toLowerCase());
+            const svgIndex = allCommands.findIndex(cmd => cmd.Name === command.Name);
+            const svgContent = svgs[svgIndex] || '';
+
             li.innerHTML = `
                 <button onclick="addItems(targetNode, '${command.Name}')">
                     ${svgContent}
@@ -286,77 +284,68 @@ function resetCommandPalette() {
             item.style.display = '';
         });
     });
-    const selected = commandPalette.querySelector('.select');
-    if (selected) {
-        selected.classList.remove('select');
-    }
+    commandPalette.querySelector('.select')?.classList.remove('select');
 }
-
-
 
 function filterCommandPalette(searchTerm) {
     const sections = commandPalette.querySelectorAll('.command-section');
     let firstMatch = null;
+    commandPalette.querySelectorAll('.select').forEach(item => { item.classList.remove('select'); });
 
     sections.forEach(section => {
         const header = section.querySelector('h4');
         const items = section.querySelectorAll('.command-item');
-        let sectionMatch = false;
-        const searchLower = searchTerm.toLowerCase();
-
-        if (header.textContent.toLowerCase().includes(searchLower)) {
-            sectionMatch = true;
-        }
-
+        const searchLower = searchTerm.toLowerCase();    
+        let sectionMatch = header.textContent.toLowerCase().includes(searchLower);
         let itemMatch = false;
+
         items.forEach(item => {
             const commandName = item.querySelector('h5').textContent.toLowerCase();
-            const commandType = item.querySelector('button').getAttribute('onclick').match(/'([^']+)'/)[1].toLowerCase();
 
-            if (sectionMatch || commandName.includes(searchLower) || commandType.includes(searchLower)) {
+            if (sectionMatch || commandName.includes(searchLower)) {
                 item.style.display = '';
-                if (!firstMatch) {
-                    firstMatch = item;
-                }
+                firstMatch ||= item;
                 itemMatch = true;
             } else {
                 item.style.display = 'none';
             }
         });
 
-        if (sectionMatch || itemMatch) {
-            section.style.display = '';
-        } else {
-            section.style.display = 'none';
-        }
-    });
-
-    if (firstMatch) {
-        firstMatch.classList.add('select');
-    }
+        sectionMatch || itemMatch ? section.style.display = '' : section.style.display = 'none';
+    }); 
+    
+    firstMatch?.classList.add('select');
 }
 
 function handleKeyNavigation(e) {
+    const commandPalette = document.querySelector('#command-palette');
     const selected = commandPalette.querySelector('.select');
+
+    // Filter visible items only
+    const allItems = Array.from(commandPalette.querySelectorAll('.command-item'))
+        .filter(item => item.style.display !== 'none');
+
     let newSelected;
+    const currentIndex = allItems.indexOf(selected);
 
     if (e.key === 'ArrowDown') {
         e.preventDefault();
-        newSelected = selected.nextElementSibling || selected.parentElement.firstElementChild;
+        newSelected = allItems[(currentIndex + 1) % allItems.length];
     } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        newSelected = selected.previousElementSibling || selected.parentElement.lastElementChild;
-    } else if (e.key === 'Enter') {
+        newSelected = allItems[(currentIndex - 1 + allItems.length) % allItems.length];
+    } else if (e.key === 'Enter' && selected) {
         e.preventDefault();
-        const commandType = selected.querySelector('button').getAttribute('onclick').match(/'([^']+)'/)[1];
+        const commandType = selected.querySelector('h5').textContent;
         addItems(targetNode, commandType);
         commandPaletteContainer.hidePopover();
         return;
     }
 
     if (newSelected) {
-        selected.classList.remove('select');
+        selected?.classList.remove('select');
         newSelected.classList.add('select');
+        newSelected.scrollIntoView({ block: 'nearest' }); // Optional: ensures visibility of the new selection
     }
 }
 
@@ -364,13 +353,11 @@ commandInput.addEventListener('input', (e) => {
     filterCommandPalette(e.target.value);
 });
 
+commandInput.addEventListener('keydown', handleKeyNavigation);
+
 function focusTargetBack() {
     targetNode|| noteContainer.lastElementChild.focus();
 }
-
-
-
-commandInput.addEventListener('keydown', handleKeyNavigation);
 
 // Initialize
 populateCommandPalette();

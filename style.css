@@ -117,13 +117,7 @@ svg path {
         outline: none;
     }
 }
-#showPopover {
-    display: none;
-}
 
-body:has(#command-container:popover-open) #showPopover {
-    display: none;
-}
 
 #command-palette {
     border-radius: 0 0 0.5rem 0.5rem;
@@ -193,8 +187,9 @@ body:has(#command-container:popover-open) #showPopover {
 @media screen and (max-width: 600px) {
     #command-container:popover-open {
         width: 100%;
+        height: calc(100% - 4rem);
         inset: 0;
-        top: 30%;
+        top: 4rem;
         border-radius: 0.5rem 0.5rem 0rem 0rem;
         overflow: visible;
     }
@@ -206,11 +201,5 @@ body:has(#command-container:popover-open) #showPopover {
 
     #showPopover {
         display: block;
-        position: absolute;
-        top: calc(40% - 0.5rem);
-        right: 0.5rem;
-        background-color: var(--verylightgray);
-        aspect-ratio: 1;
-        border-radius: 0.5rem;
     }
 }
