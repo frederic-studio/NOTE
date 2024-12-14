@@ -368,12 +368,12 @@ function adjustButtonPosition() {
     if (window.visualViewport) {
         
     const keyboardHeight = window.innerHeight - window.visualViewport.height;
-    button.style.bottom = `calc(${keyboardHeight}px + 1rem)`;
-    commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px + 1.5rem)`;
+    button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
+    commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px + 6rem)`;
 
     console.log(keyboardHeight);
     } else {
-    button.style.bottom = '1rem';
+    button.style.bottom = '0.5rem';
     }
     }
 

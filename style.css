@@ -67,7 +67,7 @@ svg path {
 
 #commandOpener {
     position: fixed;
-    right: 1rem;
+    right: 0.5rem;
     padding-block: 6px;
     border-radius: 0.5rem;
     background-color: var(--verylightgray);
@@ -202,6 +202,7 @@ svg path {
         top: 4rem;
         border-radius: 0.5rem 0.5rem 0rem 0rem;
         overflow: visible;
+        transform: translateY(100%);
     }
 
     #command-palette {
