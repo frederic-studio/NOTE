@@ -68,7 +68,7 @@ svg path {
 #commandOpener {
     position: fixed;
     right: 0.5rem;
-    padding-block: 6px;
+    aspect-ratio: 1;
     border-radius: 0.5rem;
     background-color: var(--verylightgray);
 }

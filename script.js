@@ -363,6 +363,10 @@ function focusTargetBack() {
     targetNode|| noteContainer.lastElementChild.focus();
 }
 
+function focusCommandInput() {
+    commandInput.focus();
+}
+
 function adjustButtonPosition() {
     console.log('triggered');
     if (window.visualViewport) {
