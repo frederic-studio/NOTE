@@ -2,6 +2,7 @@ const noteContainer = document.getElementById('note-container');
 const commandInput = document.getElementById('command-input');
 const commandPalette = document.getElementById('command-palette');
 const commandPaletteContainer = document.querySelector('#command-container');
+const button = document.getElementById('commandOpener');
 let targetNode;
 
 const commands = {
@@ -31,7 +32,7 @@ Object.keys(commands).forEach(category => {
     });
 });
 
-function findCommandDetail(name, detail = null) {
+function getCommandDetail(name, detail = null) {
     const command = commandLookup.get(name);
     return command ? (detail ? command[detail] : command.category) : null;
 }
@@ -39,18 +40,23 @@ function findCommandDetail(name, detail = null) {
 function addItems(targetNode, newType) {
     commandPaletteContainer.hidePopover();
     let item = newType || targetNode.getAttribute('data-name');
-    let itemCategory = findCommandDetail(item, 'category');
+    let itemCategory = getCommandDetail(item, 'category');
+    return handleItemCategory(itemCategory, targetNode, newType);
+}
+
+function handleItemCategory(itemCategory, targetNode, newType) {
     switch (itemCategory) {
-        case 'Text': { return addText(targetNode, newType); }
-        case 'List': { return addList(targetNode, newType); }
-        case 'Object': { return addObject(targetNode, newType); }
-        default: { console.error(`Unknown category: ${itemCategory}`); return null; }
+        case 'Text': return addText(targetNode, newType);
+        case 'List': return addList(targetNode, newType);
+        case 'Object': return addObject(targetNode, newType);
+        default: 
+            console.error(`Unknown category: ${itemCategory}`);
+            return null;
     }
 }
 
 function addText(targetNode, newType) {
-    console.log('addText', targetNode, targetNode.parentNode, newType);
-    let newElement = document.createElement(findCommandDetail(newType, 'Type') || 'p');
+    let newElement = document.createElement(getCommandDetail(newType, 'Type') || 'p');
     let placeholder = newElement.tagName === 'P' ? 
     'Type to add a paragraph or press "/" to add a different component' :
     `Type to add a ${newType}`;
@@ -117,8 +123,8 @@ function handleBackspace(target) {
 
     if (target.previousElementSibling?.querySelector('[contenteditable]')) {
         console.log('Case 1: Previous sibling has contenteditable');
-        let cool = target.previousElementSibling.querySelectorAll('[contenteditable]');
-        newElement = Array.from(cool).pop() || cool;
+        let siblings = target.previousElementSibling.querySelectorAll('[contenteditable]');
+        newElement = Array.from(siblings).pop() || siblings;
         target.remove();
     } else if (targetParent) {
         console.log('Case 2: Parent has nested target found');
@@ -206,7 +212,7 @@ function handleKeydown(e) {
         if (e.target.textContent.length === 1) {
             e.target.innerHTML = '';
         } else if (e.target.textContent.length === 0 && !e.target.classList.contains('title-page')) {
-            if (e.target.tagName !== 'P' && findCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
+            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
                 addItems(e.target, 'paragraph');
             }
             e.preventDefault();
@@ -320,8 +326,6 @@ function filterCommandPalette(searchTerm) {
 function handleKeyNavigation(e) {
     const commandPalette = document.querySelector('#command-palette');
     const selected = commandPalette.querySelector('.select');
-
-    // Filter visible items only
     const allItems = Array.from(commandPalette.querySelectorAll('.command-item'))
         .filter(item => item.style.display !== 'none');
 
@@ -345,7 +349,7 @@ function handleKeyNavigation(e) {
     if (newSelected) {
         selected?.classList.remove('select');
         newSelected.classList.add('select');
-        newSelected.scrollIntoView({ block: 'nearest' }); // Optional: ensures visibility of the new selection
+        newSelected.scrollIntoView({ block: 'nearest' });
     }
 }
 
@@ -358,6 +362,27 @@ commandInput.addEventListener('keydown', handleKeyNavigation);
 function focusTargetBack() {
     targetNode|| noteContainer.lastElementChild.focus();
 }
+
+function adjustButtonPosition() {
+    console.log('triggered');
+    if (window.visualViewport) {
+        
+    const keyboardHeight = window.innerHeight - window.visualViewport.height;
+    button.style.bottom = `calc(${keyboardHeight}px + 1rem)`;
+    commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px + 1.5rem)`;
+
+    console.log(keyboardHeight);
+    } else {
+    button.style.bottom = '1rem';
+    }
+    }
+
+// Event listeners for viewport changes
+window.visualViewport.addEventListener('resize', adjustButtonPosition);
+window.visualViewport.addEventListener('scroll', adjustButtonPosition);
+
+// Initial adjustment
+adjustButtonPosition();
 
 // Initialize
 populateCommandPalette();

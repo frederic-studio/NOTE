@@ -67,6 +67,10 @@ svg path {
 
 #commandOpener {
     position: fixed;
+    right: 1rem;
+    padding-block: 6px;
+    border-radius: 0.5rem;
+    background-color: var(--verylightgray);
 }
 
 *:has(#command-container:popover-open) #commandOpener {
