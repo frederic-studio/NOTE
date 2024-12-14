@@ -364,29 +364,55 @@ function focusTargetBack() {
 }
 
 function focusCommandInput() {
+    commandPaletteContainer.showPopover();
     commandInput.focus();
+    resetCommandPalette();
 }
 
+if (window.visualViewport.width > 600) {
+    noteContainer.addEventListener('click', (e) => {
+    
+    });
+}
+
+
 function adjustButtonPosition() {
-    console.log('triggered');
-    if (window.visualViewport) {
-        
-    const keyboardHeight = window.innerHeight - window.visualViewport.height;
-    button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
-    commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px + 6rem)`;
-
-    console.log(keyboardHeight);
+    if (window.visualViewport.width < 600) {
+        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+        button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
+        commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px + 6rem)`;
     } else {
-    button.style.bottom = '0.5rem';
+        button.style.bottom = '0.5rem';
     }
-    }
+}
 
-// Event listeners for viewport changes
+noteContainer.addEventListener('click', (e) => {
+    if (window.visualViewport.width < 600) {
+        adjustButtonPosition();
+    }
+});
+
 window.visualViewport.addEventListener('resize', adjustButtonPosition);
 window.visualViewport.addEventListener('scroll', adjustButtonPosition);
 
-// Initial adjustment
 adjustButtonPosition();
+
+let typingTimeout;
+
+function handleFocusOut() {
+    button.classList.add('inactive');
+}
+
+function handleKeyPress() {
+    button.classList.add('inactive');
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        button.classList.remove('inactive');
+    }, 1000);
+}
+
+noteContainer.addEventListener('focusout', handleFocusOut);
+noteContainer.addEventListener('keydown', handleKeyPress);
 
 // Initialize
 populateCommandPalette();
