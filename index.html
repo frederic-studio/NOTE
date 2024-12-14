@@ -53,5 +53,23 @@
     </template>
 
     <script src="script.js"></script>
+    <script>
+        const button = document.getElementById('commandOpener');
+        function adjustButtonPosition() {
+            if (window.visualViewport) {
+            const keyboardHeight = window.innerHeight - window.visualViewport.height;
+            button.style.bottom = `calc(${keyboardHeight}px + 1rem)`;
+            } else {
+            button.style.bottom = '1rem';
+            }
+            }
+
+        // Event listeners for viewport changes
+        window.visualViewport.addEventListener('resize', adjustButtonPosition);
+        window.visualViewport.addEventListener('scroll', adjustButtonPosition);
+
+        // Initial adjustment
+        adjustButtonPosition();
+    </script>
 </body>
 </html>

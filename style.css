@@ -67,7 +67,6 @@ svg path {
 
 #commandOpener {
     position: fixed;
-    bottom: env(safe-area-inset-bottom, 1rem);
 }
 
 *:has(#command-container:popover-open) #commandOpener {
