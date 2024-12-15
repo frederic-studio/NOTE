@@ -2,7 +2,6 @@ const noteContainer = document.getElementById('note-container');
 const commandInput = document.getElementById('command-input');
 const commandPalette = document.getElementById('command-palette');
 const commandPaletteContainer = document.querySelector('#command-container');
-const button = document.getElementById('commandOpener');
 let targetNode;
 
 const commands = {
@@ -171,12 +170,6 @@ function handleBackspace(target) {
     return newElement;
 }
 
-
-
-
-
-
-
 function caretPosition(element, action = 'get', position = 0) {
     const selection = window.getSelection();
     const range = document.createRange();
@@ -283,8 +276,6 @@ async function populateCommandPalette() {
 
 function resetCommandPalette() {
     const sections = commandPalette.querySelectorAll('.command-section');
-    commandInput.value = '';
-    updateAutocomplete('');
     sections.forEach(section => {
         section.style.display = '';
         const items = section.querySelectorAll('.command-item');
@@ -298,26 +289,22 @@ function resetCommandPalette() {
 function filterCommandPalette(searchTerm) {
     const sections = commandPalette.querySelectorAll('.command-section');
     let firstMatch = null;
-    let selectionMatch = null;
     commandPalette.querySelectorAll('.select').forEach(item => { item.classList.remove('select'); });
 
     sections.forEach(section => {
         const header = section.querySelector('h4');
         const items = section.querySelectorAll('.command-item');
         const searchLower = searchTerm.toLowerCase();    
-        let sectionMatch = header.textContent.toLowerCase().startsWith(searchLower);
+        let sectionMatch = header.textContent.toLowerCase().includes(searchLower);
         let itemMatch = false;
 
         items.forEach(item => {
             const commandName = item.querySelector('h5').textContent.toLowerCase();
 
-            if (sectionMatch || commandName.startsWith(searchLower)) {
+            if (sectionMatch || commandName.includes(searchLower)) {
                 item.style.display = '';
                 firstMatch ||= item;
                 itemMatch = true;
-                if (commandName.startsWith(searchLower)) {
-                    selectionMatch ||= item;
-                }
             } else {
                 item.style.display = 'none';
             }
@@ -325,26 +312,7 @@ function filterCommandPalette(searchTerm) {
 
         sectionMatch || itemMatch ? section.style.display = '' : section.style.display = 'none';
     }); 
-    
-    const matchToUse = selectionMatch || firstMatch;
-    matchToUse?.classList.add('select');
-    updateAutocomplete(matchToUse, searchTerm);
-}
-
-function updateAutocomplete(match, searchTerm) {
-    const writtenDiv = document.querySelector('.written');
-    const autocompleteSpan = writtenDiv.querySelector('.autocomplete');
-    const inputText = document.getElementById('command-input').value;
-
-    if (match && inputText.length > 0) {
-        const commandName = match.querySelector('h5').textContent;
-        const remainingText = commandName.slice(inputText.length);
-        writtenDiv.firstChild.textContent = inputText;
-        autocompleteSpan.textContent = remainingText;
-    } else {
-        writtenDiv.firstChild.textContent = inputText;
-        autocompleteSpan.textContent = '';
-    }
+    firstMatch?.classList.add('select');
 }
 
 commandInput.addEventListener('input', (e) => {
@@ -391,50 +359,6 @@ function focusTargetBack() {
     targetNode || noteContainer.querySelector('[contenteditable]').focus();
     caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
-
-function focusCommandInput() {
-    commandPaletteContainer.showPopover();
-    commandInput.focus();
-    resetCommandPalette();
-}
-
-function adjustButtonPosition() {
-    console.log(window.innerHeight, window.visualViewport.height);
-    if (window.visualViewport.width < 600) {
-        const keyboardHeight = window.innerHeight - window.visualViewport.height;
-        button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
-        commandPaletteContainer.style.height = `calc(${window.visualViewport.height}px + 3rem)`;
-    } else {
-        button.style.bottom = '0.5rem';
-    }
-}
-
-noteContainer.addEventListener('click', (e) => {
-        adjustButtonPosition();
-    
-});
-
-window.visualViewport.addEventListener('resize', adjustButtonPosition);
-window.visualViewport.addEventListener('scroll', adjustButtonPosition);
-
-adjustButtonPosition();
-
-let typingTimeout;
-
-function handleFocusOut() {
-    button.classList.add('inactive');
-}
-
-function handleKeyPress() {
-    button.classList.add('inactive');
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-        button.classList.remove('inactive');
-    }, 1000);
-}
-
-noteContainer.addEventListener('focusout', handleFocusOut);
-noteContainer.addEventListener('keydown', handleKeyPress);
 
 // Initialize
 populateCommandPalette();

@@ -70,25 +70,6 @@ svg path {
 
 
 
-#commandOpener {
-    position: fixed;
-    right: 0.5rem;
-    aspect-ratio: 1;
-    border-radius: 0.5rem;
-    background-color: var(--verylightgray);
-    transition: 0.2s ease-in-out;
-}
-
-*:has(#command-container:popover-open) #commandOpener {
-    display: none;
-    pointer-events: none;
-}
-
-.inactive {
-    opacity: 0;
-    transition: 0.2s ease-in-out;
-}
-
 #command-container:popover-open {
     padding: 0px;
     margin: auto;
@@ -142,6 +123,7 @@ svg path {
 #command-palette {
     border-radius: 0 0 0.5rem 0.5rem;
     overflow-y: scroll;
+    max-height: 400px;
 
     ul {
         list-style: none;
@@ -226,13 +208,13 @@ svg path {
         width: 100%;
         margin: unset;
         inset: unset;
-        max-height: 400px;
+        height: 600px;
         bottom: 0;
         border-radius: 0.5rem 0.5rem 0rem 0rem;
         overflow: hidden;
     }
 
     #command-palette {
-        height: 100%;
+        max-height: 100%;
     }
 }
