@@ -399,10 +399,11 @@ function focusCommandInput() {
 }
 
 function adjustButtonPosition() {
+    console.log(window.innerHeight, window.visualViewport.height);
     if (window.visualViewport.width < 600) {
         const keyboardHeight = window.innerHeight - window.visualViewport.height;
         button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
-        commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px)`;
+        commandPaletteContainer.style.maxHeight = `${keyboardHeight}px + 1rem`;
     } else {
         button.style.bottom = '0.5rem';
     }
