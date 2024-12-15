@@ -283,6 +283,8 @@ async function populateCommandPalette() {
 
 function resetCommandPalette() {
     const sections = commandPalette.querySelectorAll('.command-section');
+    commandInput.value = '';
+    updateAutocomplete('');
     sections.forEach(section => {
         section.style.display = '';
         const items = section.querySelectorAll('.command-item');
@@ -296,22 +298,26 @@ function resetCommandPalette() {
 function filterCommandPalette(searchTerm) {
     const sections = commandPalette.querySelectorAll('.command-section');
     let firstMatch = null;
+    let selectionMatch = null;
     commandPalette.querySelectorAll('.select').forEach(item => { item.classList.remove('select'); });
 
     sections.forEach(section => {
         const header = section.querySelector('h4');
         const items = section.querySelectorAll('.command-item');
         const searchLower = searchTerm.toLowerCase();    
-        let sectionMatch = header.textContent.toLowerCase().includes(searchLower);
+        let sectionMatch = header.textContent.toLowerCase().startsWith(searchLower);
         let itemMatch = false;
 
         items.forEach(item => {
             const commandName = item.querySelector('h5').textContent.toLowerCase();
 
-            if (sectionMatch || commandName.includes(searchLower)) {
+            if (sectionMatch || commandName.startsWith(searchLower)) {
                 item.style.display = '';
                 firstMatch ||= item;
                 itemMatch = true;
+                if (commandName.startsWith(searchLower)) {
+                    selectionMatch ||= item;
+                }
             } else {
                 item.style.display = 'none';
             }
@@ -320,8 +326,30 @@ function filterCommandPalette(searchTerm) {
         sectionMatch || itemMatch ? section.style.display = '' : section.style.display = 'none';
     }); 
     
-    firstMatch?.classList.add('select');
+    const matchToUse = selectionMatch || firstMatch;
+    matchToUse?.classList.add('select');
+    updateAutocomplete(matchToUse, searchTerm);
 }
+
+function updateAutocomplete(match, searchTerm) {
+    const writtenDiv = document.querySelector('.written');
+    const autocompleteSpan = writtenDiv.querySelector('.autocomplete');
+    const inputText = document.getElementById('command-input').value;
+
+    if (match && inputText.length > 0) {
+        const commandName = match.querySelector('h5').textContent;
+        const remainingText = commandName.slice(inputText.length);
+        writtenDiv.firstChild.textContent = inputText;
+        autocompleteSpan.textContent = remainingText;
+    } else {
+        writtenDiv.firstChild.textContent = inputText;
+        autocompleteSpan.textContent = '';
+    }
+}
+
+commandInput.addEventListener('input', (e) => {
+    filterCommandPalette(e.target.value);
+});
 
 function handleKeyNavigation(e) {
     const commandPalette = document.querySelector('#command-palette');
@@ -360,7 +388,8 @@ commandInput.addEventListener('input', (e) => {
 commandInput.addEventListener('keydown', handleKeyNavigation);
 
 function focusTargetBack() {
-    targetNode|| noteContainer.lastElementChild.focus();
+    targetNode || noteContainer.querySelector('[contenteditable]').focus();
+    caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
 
 function focusCommandInput() {
@@ -369,18 +398,11 @@ function focusCommandInput() {
     resetCommandPalette();
 }
 
-if (window.visualViewport.width > 600) {
-    noteContainer.addEventListener('click', (e) => {
-    
-    });
-}
-
-
 function adjustButtonPosition() {
     if (window.visualViewport.width < 600) {
         const keyboardHeight = window.innerHeight - window.visualViewport.height;
         button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
-        commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px + 6rem)`;
+        commandPaletteContainer.style.bottom = `calc(${keyboardHeight}px)`;
     } else {
         button.style.bottom = '0.5rem';
     }
@@ -416,4 +438,3 @@ noteContainer.addEventListener('keydown', handleKeyPress);
 
 // Initialize
 populateCommandPalette();
-commandInput.addEventListener('blur', (e) => { e.target.value = ''; });

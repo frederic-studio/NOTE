@@ -17,6 +17,10 @@ input, button {background: none; border: none;}
     --dark: hsl(225, 15%, 15%);
 }
 
+*::placeholder {
+    color: var(--lightgray);
+}
+
 @media (prefers-color-scheme: dark) {
     :root {
         --darkerthandark: hsl(225, 15%, 10%);
@@ -33,6 +37,7 @@ body {
     padding: 4rem 0.5rem; 
     background-color: var(--darkerthandark);
     color: var(--dark);
+    height: 100%;
 }
 
 #note-container {
@@ -48,7 +53,7 @@ body {
 #note-container  *[contenteditable]:empty:not(p)::after,
 #note-container  p[contenteditable]:focus:empty::after {
     content: attr(data-placeholder);
-    color: var(--verylightgray);
+    color: var(--lightgray);
     display: inline;
     font-style: italic;
 }
@@ -76,6 +81,7 @@ svg path {
 
 *:has(#command-container:popover-open) #commandOpener {
     display: none;
+    pointer-events: none;
 }
 
 .inactive {
@@ -198,19 +204,41 @@ svg path {
     scrollbar-width: none;  /* Firefox */
 }
 
+
+.written {
+    color: red;
+    position: absolute;
+    line-height: 31px;
+    inset:  0.5rem 3rem;
+    pointer-events: none;
+    color: transparent;
+
+    .autocomplete {
+        color: var(--lightgray);
+        display: inline;
+        height: 100%;
+    }
+}
+
+
 @media screen and (max-width: 600px) {
     #command-container:popover-open {
         width: 100%;
-        height: calc(100% - 4rem);
-        inset: 0;
-        top: 4rem;
+        transition: height 0.2s ease-in-out;
+        margin: 0;
+        inset: unset;
+        bottom: 0;
         border-radius: 0.5rem 0.5rem 0rem 0rem;
-        overflow: visible;
-        transform: translateY(100%);
+    }
+
+    #command-container:popover-open:focus-within {
+        height: 48px;
+        overflow: hidden;
+        transition: height 0.2s ease-in-out;
     }
 
     #command-palette {
-        overflow: visible;
+        overflow: scroll;
         height: 100%;
     }
 
