@@ -38,12 +38,7 @@ function getCommandDetail(name, detail = null) {
 
 function addItems(targetNode, newType) {
     commandPaletteContainer.hidePopover();
-    let item = newType || targetNode.getAttribute('data-name');
-    let itemCategory = getCommandDetail(item, 'category');
-    return handleItemCategory(itemCategory, targetNode, newType);
-}
-
-function handleItemCategory(itemCategory, targetNode, newType) {
+    let itemCategory = getCommandDetail(newType || targetNode.getAttribute('data-name'), 'category');
     switch (itemCategory) {
         case 'Text': return addText(targetNode, newType);
         case 'List': return addList(targetNode, newType);
@@ -56,9 +51,7 @@ function handleItemCategory(itemCategory, targetNode, newType) {
 
 function addText(targetNode, newType) {
     let newElement = document.createElement(getCommandDetail(newType, 'Type') || 'p');
-    let placeholder = newElement.tagName === 'P' ? 
-    'Type to add a paragraph or press "/" to add a different component' :
-    `Type to add a ${newType}`;
+    let placeholder = `Type to add a ${newType || 'paragraph'}`;
     const ancestor = targetNode.closest('#note-container > *');
     ancestor.insertAdjacentElement('afterend', newElement) || targetNode.insertAdjacentElement('afterend', newElement);
     newElement.setAttribute('contenteditable', 'true');
@@ -94,79 +87,42 @@ function addList(targetNode, newType) {
     return newElement;
 }
 
-
-
 function removeEmptyNode(targetNode, newType) {
-    if (targetNode.textContent.length === 0 && !targetNode.classList.contains('title-page') && newType) {
+    if (!targetNode.textContent && !targetNode.classList.contains('title-page') && newType) {
         let ancestor = targetNode.parentNode.closest(`[data-name="${targetNode.getAttribute('data-name')}"]`);
-        if (targetNode.parentNode === noteContainer) {
-            targetNode.remove();
-        } else if (ancestor) {
+        if (ancestor) {
             let childToRemove = Array.from(ancestor.children).find(child => child.contains(targetNode));
-            if (childToRemove) {
-                if (ancestor.children.length > 1) {
-                    childToRemove.remove();
-                } else {
-                    ancestor.remove();
-                }
-            }
+            ancestor.children.length > 1 ? childToRemove?.remove() : ancestor.remove();
+        } else {
+            targetNode.remove();
         }
-    }  
+    }
 }
-
 
 function handleBackspace(target) {
     let newElement;
-    let targetParent = target.parentNode.closest(`[data-name='${target.getAttribute('data-name')}']`);
+    let targetParent = target.parentNode?.closest(`[data-name='${target.getAttribute('data-name')}']`);
+    let contentEditableElements = target.previousElementSibling?.querySelectorAll('[contenteditable]');
 
-
-    if (target.previousElementSibling?.querySelector('[contenteditable]')) {
-        console.log('Case 1: Previous sibling has contenteditable');
-        let siblings = target.previousElementSibling.querySelectorAll('[contenteditable]');
-        newElement = Array.from(siblings).pop() || siblings;
+    if (!targetParent) {
+        newElement = contentEditableElements.length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
         target.remove();
-    } else if (targetParent) {
-        console.log('Case 2: Parent has nested target found');
-        currentNode = target
-
-        if (currentNode.parentElement !== targetParent) {
-            while(currentNode && currentNode.parentNode !== targetParent) {
-            currentNode = currentNode.parentNode;
-            }
-        } else {
-            currentNode = target;
-        }
-
+    } else {
+        let currentNode = target;
+        while (currentNode.parentNode !== targetParent) {currentNode = currentNode.parentNode;}
         if (targetParent.children.length > 1) {
-            console.log('Case 2.1: Parent has multiple children');
-            if (targetParent.children[0] === currentNode) {
-                console.log('Case 2.1.1: Current node is first child');
-                newElement = targetParent.previousElementSibling.querySelector('[contenteditable]') || targetParent.previousElementSibling;
-            } else {
-                console.log('Case 2.1.2: Current node is not first child');
-                newElement = currentNode.previousElementSibling.querySelector('[contenteditable]') || currentNode.previousElementSibling;
-            }
+            newElement = currentNode === targetParent.children[0]
+                ? targetParent.previousElementSibling?.querySelector('[contenteditable]') || targetParent.previousElementSibling
+                : currentNode.previousElementSibling.querySelector('[contenteditable]') || currentNode.previousElementSibling;
             currentNode.remove();
         } else {
-          console.log('Case 2.2: Parent has only one child');
-          addItems(target, 'paragraph');
-          targetParent.remove();
-          return;
+            newElement = addItems(target, 'paragraph');
+            targetParent.remove();
+            return;
         }
-    } else {
-        console.log('Case 3: No parent or sibling, fallback to previous sibling');
-        // Fallback si aucun parent n'est trouvé
-        newElement = target.previousElementSibling?.querySelector('[contenteditable]') || target.previousElementSibling;
-        target.remove();
     }
-
-    if (newElement) {
-        caretPosition(newElement, 'set', 'end'); // Positionner le curseur à la fin
-        newElement.focus(); // Focus sur le nouvel élément
-    } else {
-        console.warn('No valid element found for newElement');
-    }
-
+    caretPosition(newElement, 'set', 'end');
+    newElement.focus();
     return newElement;
 }
 
@@ -279,9 +235,7 @@ function resetCommandPalette() {
     sections.forEach(section => {
         section.style.display = '';
         const items = section.querySelectorAll('.command-item');
-        items.forEach(item => {
-            item.style.display = '';
-        });
+        items.forEach(item => {item.style.display = '';});
     });
     commandPalette.querySelector('.select')?.classList.remove('select');
 }
@@ -315,10 +269,6 @@ function filterCommandPalette(searchTerm) {
     firstMatch?.classList.add('select');
 }
 
-commandInput.addEventListener('input', (e) => {
-    filterCommandPalette(e.target.value);
-});
-
 function handleKeyNavigation(e) {
     const commandPalette = document.querySelector('#command-palette');
     const selected = commandPalette.querySelector('.select');
@@ -349,16 +299,13 @@ function handleKeyNavigation(e) {
     }
 }
 
-commandInput.addEventListener('input', (e) => {
-    filterCommandPalette(e.target.value);
-});
-
-commandInput.addEventListener('keydown', handleKeyNavigation);
 
 function focusTargetBack() {
     targetNode || noteContainer.querySelector('[contenteditable]').focus();
     caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
 
-// Initialize
 populateCommandPalette();
+commandInput.addEventListener('keydown', handleKeyNavigation);
+commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
+
