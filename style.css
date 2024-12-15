@@ -141,7 +141,6 @@ svg path {
 
 #command-palette {
     border-radius: 0 0 0.5rem 0.5rem;
-    max-height: 400px;
     overflow-y: scroll;
 
     ul {
@@ -223,20 +222,17 @@ svg path {
 
 @media screen and (max-width: 600px) {
     #command-container:popover-open {
-        width: 100%;
-        height: 100%;
         transition: height 0.2s ease-in-out;
+        width: 100%;
+        margin: unset;
         inset: unset;
+        max-height: 400px;
         bottom: 0;
         border-radius: 0.5rem 0.5rem 0rem 0rem;
+        overflow: hidden;
     }
 
     #command-palette {
-        overflow: scroll;
         height: 100%;
-    }
-
-    #showPopover {
-        display: block;
     }
 }

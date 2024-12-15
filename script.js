@@ -403,16 +403,15 @@ function adjustButtonPosition() {
     if (window.visualViewport.width < 600) {
         const keyboardHeight = window.innerHeight - window.visualViewport.height;
         button.style.bottom = `calc(${keyboardHeight}px + 0.5rem)`;
-        commandPaletteContainer.style.maxHeight = `${keyboardHeight}px + 1rem`;
+        commandPaletteContainer.style.height = `calc(${window.visualViewport.height}px + 3rem)`;
     } else {
         button.style.bottom = '0.5rem';
     }
 }
 
 noteContainer.addEventListener('click', (e) => {
-    if (window.visualViewport.width < 600) {
         adjustButtonPosition();
-    }
+    
 });
 
 window.visualViewport.addEventListener('resize', adjustButtonPosition);
