@@ -53,7 +53,7 @@ function addText(targetNode, newType) {
     let newElement = document.createElement(getCommandDetail(newType, 'Type') || 'p');
     let placeholder = `Type to add a ${newType || 'paragraph'}`;
     const ancestor = targetNode.closest('#note-container > *');
-    ancestor.insertAdjacentElement('afterend', newElement) || targetNode.insertAdjacentElement('afterend', newElement);
+    (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
     newElement.setAttribute('contenteditable', 'true');
     newElement.setAttribute('data-name', newType || 'paragraph');
     newElement.setAttribute('data-placeholder', placeholder);
@@ -71,7 +71,7 @@ function addList(targetNode, newType) {
     if (newType) {
         newElement = clone.firstElementChild;
         const ancestor = targetNode.closest('#note-container > *');
-        ancestor.insertAdjacentElement('afterend', newElement) || targetNode.insertAdjacentElement('afterend', newElement);
+        (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
         removeEmptyNode(targetNode, newType);
     } else if (!targetNode.textContent) {
         return addItems(targetNode, 'paragraph');
@@ -304,6 +304,21 @@ function focusTargetBack() {
     targetNode || noteContainer.querySelector('[contenteditable]').focus();
     caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
+
+function getKeyboardHeight() {
+    return window.innerHeight - document.documentElement.clientHeight;
+}
+
+function setCommandPaletteHeight() {
+    const keyboardHeight = getKeyboardHeight();
+    if (screen.width < 600) {
+        commandPaletteContainer.style.height = `calc(${keyboardHeight}px + 3rem)`;
+    } else {
+        commandPaletteContainer.style.height = `400px`;
+    }
+}
+
+window.addEventListener('resize', setCommandPaletteHeight);
 
 populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
