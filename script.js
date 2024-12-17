@@ -305,20 +305,21 @@ function focusTargetBack() {
     caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
 
-function getKeyboardHeight() {
-    return window.innerHeight - document.documentElement.clientHeight;
-}
-
 function setCommandPaletteHeight() {
-    const keyboardHeight = getKeyboardHeight();
-    if (screen.width < 600) {
+    const visualHeight = window.visualViewport.height; // The actual viewport height
+    const totalHeight = window.innerHeight; // The full height before the keyboard
+    const keyboardHeight = totalHeight - visualHeight;
+
+    if (keyboardHeight > 0) { // Keyboard is visible
         commandPaletteContainer.style.height = `calc(${keyboardHeight}px + 3rem)`;
     } else {
-        commandPaletteContainer.style.height = `400px`;
+        commandPaletteContainer.style.height = `400px`; // Default height
     }
 }
 
-window.addEventListener('resize', setCommandPaletteHeight);
+window.visualViewport.addEventListener('resize', setCommandPaletteHeight);
+window.visualViewport.addEventListener('scroll', setCommandPaletteHeight);
+
 
 populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
