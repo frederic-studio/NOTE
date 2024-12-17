@@ -305,22 +305,27 @@ function focusTargetBack() {
     caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
 
-function setCommandPaletteHeight() {
-    const visualHeight = window.visualViewport.height; // The actual viewport height
-    const totalHeight = window.innerHeight; // The full height before the keyboard
-    const keyboardHeight = totalHeight - visualHeight;
+let initialHeight = window.innerHeight;
 
-    if (keyboardHeight > 0) { // Keyboard is visible
-        commandPaletteContainer.style.height = `48px`;
-        commandPaletteContainer.style.bottom = `${keyboardHeight + 0.5}rem`;
+function setCommandPaletteHeight() {
+    const currentHeight = window.innerHeight;
+    const keyboardHeight = initialHeight - currentHeight;
+
+    if (keyboardHeight > 0) {
+        // Keyboard is visible
+        commandPaletteContainer.style.height = '48px';
+        commandPaletteContainer.style.bottom = `${keyboardHeight + 8}px`;
     } else {
-        commandPaletteContainer.style.height = `${(totalHeight - visualHeight) || 400}px`;
-        commandPaletteContainer.style.bottom = `0.5rem`;
+        // Keyboard not visible
+        commandPaletteContainer.style.height = '400px';
+        commandPaletteContainer.style.bottom = 'env(safe-area-inset-bottom, 0.5rem)';
     }
 }
 
-window.visualViewport.addEventListener('resize', setCommandPaletteHeight);
-window.visualViewport.addEventListener('scroll', setCommandPaletteHeight);
+window.addEventListener('resize', setCommandPaletteHeight);
+window.addEventListener('orientationchange', () => {
+    initialHeight = window.innerHeight;
+});
 
 
 populateCommandPalette();
