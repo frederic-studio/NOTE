@@ -311,9 +311,11 @@ function setCommandPaletteHeight() {
     const keyboardHeight = totalHeight - visualHeight;
 
     if (keyboardHeight > 0) { // Keyboard is visible
-        commandPaletteContainer.style.height = `calc(${keyboardHeight}px + 3rem)`;
+        commandPaletteContainer.style.height = `48px`;
+        commandPaletteContainer.style.bottom = `${keyboardHeight + 0.5}rem`;
     } else {
-        commandPaletteContainer.style.height = `400px`; // Default height
+        commandPaletteContainer.style.height = `${(totalHeight - visualHeight) || 400}px`;
+        commandPaletteContainer.style.bottom = `0.5rem`;
     }
 }
 
