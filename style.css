@@ -6,28 +6,25 @@ input, button, textarea, select {font: inherit; color: inherit;}
 p, h1, h2, h3, h4, h5, h6, li {overflow-wrap: break-word;}
 #root, #__next {isolation: isolate;}
 input, button {background: none; border: none;}
-
+.recent-commands::-webkit-scrollbar {display: none;}
+.recent-commands, #command-palette {-ms-overflow-style: none; scrollbar-width: none;}
 *:focus, *:focus-visible {border: none; outline: none !important; }
 
 :root {
-    --darkerthandark: hsl(225, 15%, 96%);
-    --white: hsl(0, 0%, 100%);
-    --verylightgray: hsl(225, 15%, 95%);
-    --lightgray: hsl(225, 15%, 70%);
-    --dark: hsl(225, 15%, 15%);
-}
-
-*::placeholder {
-    color: var(--lightgray);
+        --body-background-color: hsl(225, 15%, 95%);
+        --card-background-color: hsl(225, 15%, 100%);
+        --border-color:          hsl(225, 15%, 90%);
+        --accent-color:          hsl(225, 15%, 50%);
+        --text-color:            hsl(225, 15%, 10%);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --darkerthandark: hsl(225, 15%, 10%);
-        --dark: hsl(0, 0%, 100%);
-        --verylightgray: hsl(225, 15%, 25%);
-        --lightgray: hsl(225, 15%, 65%);
-        --white: hsl(225, 15%, 15%);
+        --body-background-color: hsl(225, 15%, 5%);
+        --card-background-color: hsl(225, 15%, 10%);
+        --border-color:          hsl(225, 15%, 15%);
+        --accent-color:          hsl(225, 15%, 50%);
+        --text-color:            hsl(225, 15%, 100%);
     }
 }
 
@@ -35,27 +32,32 @@ input, button {background: none; border: none;}
 body {
     font-family: "Radio Canada Big", sans-serif;
     padding: 4rem 0.5rem; 
-    background-color: var(--darkerthandark);
-    color: var(--dark);
+    background-color: var(--body-background-color);
+    color: var(--text-color);
     height: 100%;
 }
 
-
+*::placeholder {color: var(--accent-color);}
+svg path {fill: var(--accent-color);}
 
 #note-container {
     text-wrap: stable;
     width: min(100% - 1rem, 60ch);
     margin: auto;
+    anchor-name: --note-container;
     > * {
         margin: 0.5rem 0;
     }
+}
 
+#note-container > *:last-child {
+    anchor-name: --note-container;
 }
 
 #note-container  *[contenteditable]:empty:not(p)::after,
 #note-container  p[contenteditable]:focus:empty::after {
     content: attr(data-placeholder);
-    color: var(--lightgray);
+    color: var(--accent-color);
     display: inline;
     font-style: italic;
 }
@@ -66,29 +68,27 @@ form > div {
     align-items: center;
 }
 
-svg path {
-    fill: var(--lightgray);
-}
-
-
 
 #command-container:popover-open {
     padding: 0px;
-    margin: auto;
-    width: min(100% - 2rem, 600px); 
+    margin: 0;
+    inset: auto;
+    top: anchor(top);
+    left: anchor(left);
 
-    backdrop-filter: blur(4rem);
-    background-color: hsla(225, 15%, 100%, 0.01);
-    outline: 1px solid var(--verylightgray);
+    position-anchor: --note-container;
+
+    width: min(100% - 2rem, 60ch); 
+    background-color: var(--card-background-color);
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
-    border: none;
-    overflow: hidden;
+    position: sticky;
 }
 
 #command-search {
     position: relative;
     min-height: 3rem;
-    border-bottom: 1px solid var(--verylightgray);
+    border-bottom: 1px solid var(--border-color);
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -109,11 +109,7 @@ svg path {
     input {
         background: none;
         width: 100%;
-        color: var(--dark);
-    }
-
-    input:focus {
-        outline: none;
+        color: var(--text-color);
     }
 }
 
@@ -130,7 +126,7 @@ svg path {
 
     h4 {
         margin-bottom: 0.75rem;
-        color: var(--lightgray);
+        color: var(--accent-color);
         font: 500 1rem/1.2 "Radio Canada Big", sans-serif;
         padding-left: 0.5rem;
     }
@@ -138,10 +134,10 @@ svg path {
     .command-section {
         padding: 1rem 0.5rem;
     }
-}
-
-.command-section:not(:first-of-type) {
-    border-top: 1px solid var(--verylightgray);
+    
+    .command-section:not(:first-of-type) {
+        border-top: 1px solid var(--border-color);
+    }
 }
 
 .command-item button {
@@ -149,54 +145,20 @@ svg path {
     align-items: center;
     gap: 1rem;
     padding: 0.5rem;
-    border-radius: 0.5rem;
-    text-align: left;
-    width: 100%;
     cursor: pointer;
-    h5 {font: 500 1rem/1.2 "Radio Canada Big", sans-serif; color: var(--dark); text-transform: capitalize;}
+    width: 100%;
+    h5 {font: 500 1rem/1.2 "Radio Canada Big", sans-serif; color: var(--text-color); text-transform: capitalize;}
 }
 
 .command-item:focus-within,
 .command-item:hover,
 .command-item.select {
-    background: var(--verylightgray);
+    background: var(--border-color);
     border-radius: 0.25rem;
-    cursor: pointer;
-
-    * {outline: none;}
 }
 
-.command-item:focus-within,
-.command-item:focus,
-.command-item:hover {
-    outline: none;
-}
-
-.recent-commands::-webkit-scrollbar {
-    display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.recent-commands,
-#command-palette {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-
-
-.written {
-    color: red;
-    position: absolute;
-    line-height: 31px;
-    inset:  0.5rem 3rem;
-    pointer-events: none;
-    color: transparent;
-
-    .autocomplete {
-        color: var(--lightgray);
-        display: inline;
-        height: 100%;
-    }
+#command-palette:has(.command-item:not(.select):focus-within, .command-item:not(.select):hover) .command-item.select {
+    background: none;
 }
 
 
@@ -207,10 +169,13 @@ svg path {
         margin: 0;
         inset: 0.5rem;
         bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
-        top: unset;
+        top: 400px;
+        height: calc(100vh - 400px - 0.5rem);
+        min-height: 48px;
     }
 
     #command-palette {
         max-height: 100%;
+        padding-bottom: 3rem;
     }
 }
