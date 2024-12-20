@@ -68,6 +68,7 @@ function addText(targetNode, newType) {
 function addList(targetNode, newType) {
     let newItem = newType || targetNode.getAttribute('data-name');
     let template = document.getElementById(`template-${newItem}`);
+    let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
     let clone = template.content.cloneNode(true);
     let newElement;
 
@@ -139,16 +140,15 @@ function caretPosition(element, action = 'get', position = 0) {
     const range = selection.getRangeAt(0);
 
     if (action === 'get') {
-        // Calculate the caret position relative to the text content.
         const tempRange = range.cloneRange();
         tempRange.selectNodeContents(element);
         tempRange.setEnd(range.endContainer, range.endOffset);
         return tempRange.toString().length;
     } else if (action === 'set') {
-        // Safely set the caret position.
         let textNode = element.firstChild;
+
         if (!textNode) {
-            element.textContent = ''; // Ensure there's a text node.
+            element.textContent = ''; // Ensure there is a text node
             textNode = element.firstChild;
         }
 
@@ -158,13 +158,14 @@ function caretPosition(element, action = 'get', position = 0) {
             range.selectNodeContents(element);
             range.collapse(false);
         } else {
-            range.setStart(textNode, Math.min(position, textNode.textContent.length));
+            range.setStart(textNode || element, Math.min(position, (textNode?.textContent || "").length));
         }
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
     }
 }
+
 
 noteContainer.addEventListener('keydown', (e) => {
     let editableElement = e.target.closest('[contenteditable="true"]');
@@ -173,25 +174,40 @@ noteContainer.addEventListener('keydown', (e) => {
     handleKeydown(e);
 });
 
+
 function handleKeydown(e) {
     if (e.key === "Backspace") {
+        const selection = window.getSelection();
         const caretPos = caretPosition(e.target, 'get');
         const textContent = e.target.textContent;
-
-        if (textContent.length === 1 && caretPos === 1) {
-            e.target.innerHTML = '';
-            console.log('single');
-        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
-            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
-                addItems(e.target, 'paragraph');
-            }
+    
+        // Check if there's selected text
+        if (selection.rangeCount > 0 && !selection.isCollapsed) {
             e.preventDefault();
-            handleBackspace(e.target);
-        } else if (caretPos > 0) {
-            e.preventDefault();
-            const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
+            const range = selection.getRangeAt(0);
+            const startOffset = range.startOffset;
+            const endOffset = range.endOffset;
+            
+            // Remove selected text
+            const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
             e.target.textContent = newText;
-            caretPosition(e.target, 'set', caretPos - 1);
+            caretPosition(e.target, 'set', startOffset);
+        } else {
+            // Original backspace logic for single character
+            if (textContent.length === 1 && caretPos === 1) {
+                e.target.innerHTML = '';
+            } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
+                if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
+                    addItems(e.target, 'paragraph');
+                }
+                e.preventDefault();
+                handleBackspace(e.target);
+            } else if (caretPos > 0) {
+                e.preventDefault();
+                const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
+                e.target.textContent = newText;
+                caretPosition(e.target, 'set', caretPos - 1);
+            }
         }
     }
 
@@ -303,6 +319,19 @@ function handleKeyNavigation(e) {
 
     let newSelected;
     const currentIndex = allItems.indexOf(selected);
+
+    if (e.key === 'Backspace' && !commandInput.value) {
+        focusTargetBack();
+        commandPaletteContainer.hidePopover();
+        return;
+    }
+
+    if (commandInput.value.length > 5 && !selected) {
+        targetNode.textContent += `/${commandInput.value}`;
+        focusTargetBack();
+        commandPaletteContainer.hidePopover();
+        return
+    }
 
     if (e.key === 'ArrowDown') {
         e.preventDefault();

@@ -168,14 +168,13 @@ form > div {
         width: calc(100% - 1rem);
         margin: 0;
         inset: 0.5rem;
-        bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
-        top: 400px;
-        height: calc(100vh - 400px - 0.5rem);
-        min-height: 48px;
+        top: unset;
+        height: 500px;
+        overflow: hidden;
     }
 
     #command-palette {
         max-height: 100%;
-        padding-bottom: 3rem;
+        padding-bottom: 2.5rem;
     }
 }
