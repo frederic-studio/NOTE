@@ -23,17 +23,64 @@ const commands = {
     ]
 };
 
+// Note container gestions
+// 1. Handle keydown events
+// 2. Handle backspace key
+// 3. Handle adding new items based on type
+// 4. Handle adding new text
+// 5. Handle adding new list and list items
+// 6. Handle removing nodes and empty nodes
 
-const commandLookup = new Map();
-Object.keys(commands).forEach(category => {
-    commands[category].forEach(command => {
-        commandLookup.set(command.Name, { ...command, category });
-    });
+noteContainer.addEventListener('keydown', (e) => {
+    targetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
+    
+    if (e.key === "Backspace") {
+        e.preventDefault();
+        handleBackspace(e);
+    }
+
+    if (e.key === "Enter") {
+        e.preventDefault();
+        const newElement = addItems(targetNode);
+        targetNode = newElement;
+    }
+
+    if (e.key === "/") {
+        e.preventDefault();
+        commandPaletteContainer.showPopover();
+        e.target.blur();
+        (window.innerWidth > 600) && commandInput.focus();
+    }
 });
 
-function getCommandDetail(name, detail = null) {
-    const command = commandLookup.get(name);
-    return command ? (detail ? command[detail] : command.category) : null;
+function handleBackspace(e) {
+    const selection = window.getSelection();
+    const caretPos = caretPosition(e.target, 'get');
+    const textContent = e.target.textContent;
+
+    if (selection.rangeCount > 0 && !selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        const startOffset = range.startOffset;
+        const endOffset = range.endOffset;
+        const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
+        e.target.textContent = newText;
+        caretPosition(e.target, 'set', startOffset);
+    } else {
+        if (textContent.length === 1 && caretPos === 1) {
+            e.target.innerHTML = '';
+        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
+            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
+                addItems(e.target, 'paragraph');
+                handleRemovingNode('Empty', e.target);
+                return;
+            }
+            handleRemovingNode(null, e.target);
+        } else if (caretPos > 0) {
+            const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
+            e.target.textContent = newText;
+            caretPosition(e.target, 'set', caretPos - 1);
+        }
+    }
 }
 
 function addItems(targetNode, newType) {
@@ -81,7 +128,7 @@ function addList(targetNode, newType) {
         return addItems(targetNode, 'paragraph');
     } else {
         let e = clone.firstElementChild.children[0];
-        targetNode.parentNode.closest(`[data-name='${newItem}']`).appendChild(e);
+        targetNode.parentNode.closest(`[data-name='${newItem}'] > *`).insertAdjacentElement('afterend', e);
         newElement = e.querySelector('[contenteditable]') || e;
     }
 
@@ -93,44 +140,11 @@ function addList(targetNode, newType) {
     return newElement;
 }
 
-function caretPosition(element, action = 'get', position = 0) {
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return 0; // Ensure a selection exists.
-    const range = selection.getRangeAt(0);
-
-    if (action === 'get') {
-        const tempRange = range.cloneRange();
-        tempRange.selectNodeContents(element);
-        tempRange.setEnd(range.endContainer, range.endOffset);
-        return tempRange.toString().length;
-    } else if (action === 'set') {
-        let textNode = element.firstChild;
-
-        if (!textNode) {
-            element.textContent = ''; // Ensure there is a text node
-            textNode = element.firstChild;
-        }
-
-        if (position === 'start') {
-            range.setStart(textNode, 0);
-        } else if (position === 'end') {
-            range.selectNodeContents(element);
-            range.collapse(false);
-        } else {
-            range.setStart(textNode || element, Math.min(position, (textNode?.textContent || "").length));
-        }
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
-}
-
 function handleRemovingNode(action, target, newType) {
     let newElement;
     let targetParent = target.parentNode?.closest(`[data-name='${target.getAttribute('data-name')}']`);
     let contentEditableElements = target.previousElementSibling?.querySelectorAll('[contenteditable]');
     let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
-
 
     if (action === 'Empty') {
         if (!target.textContent && !target.classList.contains('title-page') && newType) {
@@ -169,62 +183,60 @@ function handleRemovingNode(action, target, newType) {
     }
 }
 
-function handleBackspace(e) {
+// Helper functions
+// 1. Get/Set caret position
+// 2. Find commands details
+
+function caretPosition(element, action = 'get', position = 0) {
     const selection = window.getSelection();
-    const caretPos = caretPosition(e.target, 'get');
-    const textContent = e.target.textContent;
+    if (!selection.rangeCount) return 0; // Ensure a selection exists.
+    const range = selection.getRangeAt(0);
 
-    if (selection.rangeCount > 0 && !selection.isCollapsed) {
-        const range = selection.getRangeAt(0);
-        const startOffset = range.startOffset;
-        const endOffset = range.endOffset;
-        const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
-        e.target.textContent = newText;
-        caretPosition(e.target, 'set', startOffset);
-    } else {
-        if (textContent.length === 1 && caretPos === 1) {
-            e.target.innerHTML = '';
-        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
-            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
-                addItems(e.target, 'paragraph');
-            }
-            handleRemovingNode(null, e.target);
-        } else if (caretPos > 0) {
-            const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
-            e.target.textContent = newText;
-            caretPosition(e.target, 'set', caretPos - 1);
+    if (action === 'get') {
+        const tempRange = range.cloneRange();
+        tempRange.selectNodeContents(element);
+        tempRange.setEnd(range.endContainer, range.endOffset);
+        return tempRange.toString().length;
+    } else if (action === 'set') {
+        let textNode = element.firstChild;
+
+        if (!textNode) {
+            element.textContent = ''; // Ensure there is a text node
+            textNode = element.firstChild;
         }
+
+        if (position === 'start') {
+            range.setStart(textNode, 0);
+        } else if (position === 'end') {
+            range.selectNodeContents(element);
+            range.collapse(false);
+        } else {
+            range.setStart(textNode || element, Math.min(position, (textNode?.textContent || "").length));
+        }
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 }
 
-function handleKeydown(e) {
-    if (e.key === "Backspace") {
-        e.preventDefault();
-        handleBackspace(e);
-    }
-
-    if (e.key === "Enter") {
-        e.preventDefault();
-        const newElement = addItems(targetNode);
-        targetNode = newElement;
-    }
-
-    if (e.key === "/") {
-        e.preventDefault();
-        commandPaletteContainer.showPopover();
-        e.target.blur();
-        (window.innerWidth > 600) && commandInput.focus();
-        resetCommandPalette();
-    }
-}
-
-noteContainer.addEventListener('keydown', (e) => {
-    let editableElement = e.target.closest('[contenteditable="true"]');
-    if (!editableElement) return;
-    targetNode = editableElement;
-    handleKeydown(e);
+const commandLookup = new Map();
+Object.keys(commands).forEach(category => {
+    commands[category].forEach(command => {
+        commandLookup.set(command.Name, { ...command, category });
+    });
 });
 
+function getCommandDetail(name, detail = null) {
+    const command = commandLookup.get(name);
+    return command ? (detail ? command[detail] : command.category) : null;
+}
+
+// Command palette gestions
+// 1. Fetch SVG icons
+// 2. Populate command palette
+// 3. Reset command palette
+// 4. Filter command palette
+// 5. Handle key navigation
 
 async function fetchSVG(commandName) {
     const svgPromises = commandName.map(async (name) => {
@@ -272,14 +284,20 @@ async function populateCommandPalette() {
     }
 }
 
-function resetCommandPalette() {
+function resetCommandPalette(target) {
     const sections = commandPalette.querySelectorAll('.command-section');
+    commandInput.value = '';
     sections.forEach(section => {
         section.style.display = '';
         const items = section.querySelectorAll('.command-item');
         items.forEach(item => {item.style.display = '';});
     });
     commandPalette.querySelector('.select')?.classList.remove('select');
+    if (target) {
+        target || noteContainer.querySelector('[contenteditable]').focus();
+        caretPosition(target || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
+    }
+    commandPaletteContainer.hidePopover();
 }
 
 function filterCommandPalette(searchTerm) {
@@ -321,15 +339,13 @@ function handleKeyNavigation(e) {
     const currentIndex = allItems.indexOf(selected);
 
     if (e.key === 'Backspace' && !commandInput.value) {
-        focusTargetBack();
-        commandPaletteContainer.hidePopover();
+        resetCommandPalette(targetNode);
         return;
     }
 
     if (commandInput.value.length > 5 && !selected) {
         targetNode.textContent += `/${commandInput.value}`;
-        focusTargetBack();
-        commandPaletteContainer.hidePopover();
+        resetCommandPalette(targetNode);
         return
     }
 
@@ -343,7 +359,7 @@ function handleKeyNavigation(e) {
         e.preventDefault();
         const commandType = selected.querySelector('h5').textContent;
         addItems(targetNode, commandType);
-        commandPaletteContainer.hidePopover();
+        resetCommandPalette();
         return;
     }
 
@@ -354,17 +370,14 @@ function handleKeyNavigation(e) {
     }
 }
 
-function focusTargetBack() {
-    targetNode || noteContainer.querySelector('[contenteditable]').focus();
-    caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
-}
-
-noteContainer.addEventListener('focusin', (e) => {
-        caretPosition(e.target, 'set', 'end');
-});
+// Event listeners & initializations
+// 1. Initialize command palette
+// 2. Handle key navigation
 
 populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
 commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
-commandInput.addEventListener('blur', (e) => e.target.value = '');
+commandInput.addEventListener('blur', () => resetCommandPalette(targetNode));
+noteContainer.addEventListener('focusin', (e) => {caretPosition(e.target, 'set', 'end');});
+
 

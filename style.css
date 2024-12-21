@@ -59,12 +59,6 @@ svg path {fill: var(--accent-color);}
     font-style: italic;
 }
 
-form > div {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
 #command-container:popover-open {
     padding: 0px;
     margin: 0;
@@ -173,3 +167,45 @@ form > div {
         padding-bottom: 2.5rem;
     }
 }
+
+
+
+
+
+
+
+ form[data-name="checklist"] {
+    position: relative;
+     
+    div {
+        display: flex;
+        gap: 0.5rem;
+        align-items: top;
+    }
+
+    svg {
+        position: absolute;
+        left: -0.25rem;
+        opacity: 0;
+        transform: rotate(-30deg) scale(0.5);
+        pointer-events: none;
+        transition: all 0.2s ease-in-out;
+    }
+
+    div:has(input[type="checkbox"]:checked) svg {
+        opacity: 1;
+        transform: rotate(0deg) scale(0.8);
+        transition: all 0.2s ease-in-out;
+    }
+
+    input[type="checkbox"] {
+        appearance: none; /* Remove default styles */
+        margin-top: 0.25rem;
+        min-width: 1rem;
+        max-height: 1rem;
+        background-color: var(--body-background-color);
+        border: 2px solid var(--accent-color);
+        border-radius: 4px;
+        cursor: pointer;
+    }
+ }
