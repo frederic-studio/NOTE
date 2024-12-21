@@ -44,10 +44,7 @@ svg path {fill: var(--accent-color);}
     text-wrap: stable;
     width: min(100% - 1rem, 60ch);
     margin: auto;
-    anchor-name: --note-container;
-    > * {
-        margin: 0.5rem 0;
-    }
+    > * {margin: 0.5rem 0;}
 }
 
 #note-container > *:last-child {
@@ -67,7 +64,6 @@ form > div {
     gap: 0.5rem;
     align-items: center;
 }
-
 
 #command-container:popover-open {
     padding: 0px;
@@ -112,7 +108,6 @@ form > div {
         color: var(--text-color);
     }
 }
-
 
 #command-palette {
     border-radius: 0 0 0.5rem 0.5rem;

@@ -61,7 +61,7 @@ function addText(targetNode, newType) {
     targetNode.textContent = targetNode.innerText.substring(0, caretPosition(targetNode, 'get'));
     newElement.focus();
     newElement.innerText = textAfterCaret;
-    removeEmptyNode(targetNode, newType);
+    handleRemovingNode('Empty', targetNode, newType);
     return newElement;
 }
 
@@ -76,7 +76,7 @@ function addList(targetNode, newType) {
         newElement = clone.firstElementChild;
         const ancestor = targetNode.closest('#note-container > *');
         (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
-        removeEmptyNode(targetNode, newType);
+        handleRemovingNode('Empty', targetNode, newType);
     } else if (!targetNode.textContent) {
         return addItems(targetNode, 'paragraph');
     } else {
@@ -90,47 +90,6 @@ function addList(targetNode, newType) {
         : newElement.querySelector('[contenteditable]').focus();
 
     (newElement.querySelector('[contenteditable]') || newElement).textContent = textAfterCaret;
-    return newElement;
-}
-
-function removeEmptyNode(targetNode, newType) {
-    if (!targetNode.textContent && !targetNode.classList.contains('title-page') && newType) {
-        let ancestor = targetNode.parentNode.closest(`[data-name="${targetNode.getAttribute('data-name')}"]`);
-        if (ancestor) {
-            let childToRemove = Array.from(ancestor.children).find(child => child.contains(targetNode));
-            ancestor.children.length > 1 ? childToRemove?.remove() : ancestor.remove();
-        } else {
-            targetNode.remove();
-        }
-    }
-}
-
-function handleBackspace(target) {
-    let newElement;
-    let targetParent = target.parentNode?.closest(`[data-name='${target.getAttribute('data-name')}']`);
-    let contentEditableElements = target.previousElementSibling?.querySelectorAll('[contenteditable]');
-    let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
-
-    if (!targetParent) {
-        newElement = (contentEditableElements ?? []).length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
-        target.remove();
-    } else {
-        let currentNode = target;
-        while (currentNode.parentNode !== targetParent) {currentNode = currentNode.parentNode;}
-        if (targetParent.children.length > 1) {
-            newElement = currentNode === targetParent.children[0]
-                ? targetParent.previousElementSibling?.querySelector('[contenteditable]') || targetParent.previousElementSibling
-                : currentNode.previousElementSibling.querySelector('[contenteditable]') || currentNode.previousElementSibling;
-            currentNode.remove();
-        } else {
-            newElement = addItems(target, 'paragraph');
-            targetParent.remove();
-            return;
-        }
-    }
-    caretPosition(newElement, 'set', 'end');
-    newElement.focus();
-    newElement.textContent += textAfterCaret;
     return newElement;
 }
 
@@ -166,49 +125,82 @@ function caretPosition(element, action = 'get', position = 0) {
     }
 }
 
+function handleRemovingNode(action, target, newType) {
+    let newElement;
+    let targetParent = target.parentNode?.closest(`[data-name='${target.getAttribute('data-name')}']`);
+    let contentEditableElements = target.previousElementSibling?.querySelectorAll('[contenteditable]');
+    let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
 
-noteContainer.addEventListener('keydown', (e) => {
-    let editableElement = e.target.closest('[contenteditable="true"]');
-    if (!editableElement) return;
-    targetNode = editableElement;
-    handleKeydown(e);
-});
 
+    if (action === 'Empty') {
+        if (!target.textContent && !target.classList.contains('title-page') && newType) {
+            let ancestor = target.parentNode.closest(`[data-name="${target.getAttribute('data-name')}"]`);
+            if (ancestor) {
+                let childToRemove = Array.from(ancestor.children).find(child => child.contains(target));
+                ancestor.children.length > 1 ? childToRemove?.remove() : ancestor.remove();
+            } else {
+                target.remove();
+            }
+        }
+        return;
+    } else {
+        if (!targetParent) {
+            newElement = (contentEditableElements ?? []).length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
+            target.remove();
+        } else {
+            let currentNode = target;
+            while (currentNode.parentNode !== targetParent) {currentNode = currentNode.parentNode;}
+            if (targetParent.children.length > 1) {
+                newElement = currentNode === targetParent.children[0]
+                    ? targetParent.previousElementSibling?.querySelector('[contenteditable]') || targetParent.previousElementSibling
+                    : currentNode.previousElementSibling.querySelector('[contenteditable]') || currentNode.previousElementSibling;
+                currentNode.remove();
+            } else {
+                newElement = addItems(target, 'paragraph');
+                targetParent.remove();
+                return;
+            }
+        }
+        let pos =  newElement.textContent.length;
+        newElement.focus();
+        newElement.textContent += textAfterCaret;
+        caretPosition(newElement, 'set', pos);
+        return newElement;
+    }
+}
+
+function handleBackspace(e) {
+    const selection = window.getSelection();
+    const caretPos = caretPosition(e.target, 'get');
+    const textContent = e.target.textContent;
+
+    if (selection.rangeCount > 0 && !selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        const startOffset = range.startOffset;
+        const endOffset = range.endOffset;
+        const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
+        e.target.textContent = newText;
+        caretPosition(e.target, 'set', startOffset);
+    } else {
+        if (textContent.length === 1 && caretPos === 1) {
+            e.target.innerHTML = '';
+        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
+            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
+                addItems(e.target, 'paragraph');
+            }
+            handleRemovingNode(null, e.target);
+        } else if (caretPos > 0) {
+            const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
+            e.target.textContent = newText;
+            caretPosition(e.target, 'set', caretPos - 1);
+        }
+    }
+}
 
 function handleKeydown(e) {
     if (e.key === "Backspace") {
-        const selection = window.getSelection();
-        const caretPos = caretPosition(e.target, 'get');
-        const textContent = e.target.textContent;
-    
-        // Check if there's selected text
-        if (selection.rangeCount > 0 && !selection.isCollapsed) {
-            e.preventDefault();
-            const range = selection.getRangeAt(0);
-            const startOffset = range.startOffset;
-            const endOffset = range.endOffset;
-            
-            // Remove selected text
-            const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
-            e.target.textContent = newText;
-            caretPosition(e.target, 'set', startOffset);
-        } else {
-            // Original backspace logic for single character
-            if (textContent.length === 1 && caretPos === 1) {
-                e.target.innerHTML = '';
-            } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
-                if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
-                    addItems(e.target, 'paragraph');
-                }
-                e.preventDefault();
-                handleBackspace(e.target);
-            } else if (caretPos > 0) {
-                e.preventDefault();
-                const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
-                e.target.textContent = newText;
-                caretPosition(e.target, 'set', caretPos - 1);
-            }
-        }
+        e.preventDefault();
+        handleBackspace(e);
     }
 
     if (e.key === "Enter") {
@@ -225,6 +217,14 @@ function handleKeydown(e) {
         resetCommandPalette();
     }
 }
+
+noteContainer.addEventListener('keydown', (e) => {
+    let editableElement = e.target.closest('[contenteditable="true"]');
+    if (!editableElement) return;
+    targetNode = editableElement;
+    handleKeydown(e);
+});
+
 
 async function fetchSVG(commandName) {
     const svgPromises = commandName.map(async (name) => {
@@ -358,6 +358,10 @@ function focusTargetBack() {
     targetNode || noteContainer.querySelector('[contenteditable]').focus();
     caretPosition(targetNode || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
 }
+
+noteContainer.addEventListener('focusin', (e) => {
+        caretPosition(e.target, 'set', 'end');
+});
 
 populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
