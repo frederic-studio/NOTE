@@ -8,7 +8,7 @@ p, h1, h2, h3, h4, h5, h6, li {overflow-wrap: break-word;}
 input, button {background: none; border: none;}
 .recent-commands::-webkit-scrollbar {display: none;}
 .recent-commands, #command-palette {-ms-overflow-style: none; scrollbar-width: none;}
-*:focus, *:focus-visible {border: none; outline: none !important; }
+*:not([contenteditable]):focus, *:not([contenteditable]):focus-visible {border: none; outline: none;}
 
 :root {
         --body-background-color: hsl(225, 15%, 95%);
@@ -35,6 +35,7 @@ body {
     background-color: var(--body-background-color);
     color: var(--text-color);
     height: 100%;
+    overflow-x: hidden;
 }
 
 *::placeholder {color: var(--accent-color);}
@@ -44,7 +45,14 @@ svg path {fill: var(--accent-color);}
     text-wrap: stable;
     width: min(100% - 1rem, 60ch);
     margin: auto;
+    margin-bottom: 100vh;
     > * {margin: 0.5rem 0;}
+}
+
+[contenteditable] {
+    width: 100%;
+    outline: #395cc600 solid 1px;
+    transition: all 0.2s ease-in-out;
 }
 
 #note-container > *:last-child {
@@ -175,12 +183,14 @@ svg path {fill: var(--accent-color);}
 
 
  form[data-name="checklist"] {
-    position: relative;
      
     div {
+        position: relative;
         display: flex;
         gap: 0.5rem;
         align-items: top;
+        margin-top: 0.25rem;
+        margin-left: 1rem;
     }
 
     svg {
@@ -208,4 +218,11 @@ svg path {fill: var(--accent-color);}
         border-radius: 4px;
         cursor: pointer;
     }
+ }
+
+ .selected {
+    background-color: #395cc622;
+    outline: #395cc655 solid 1px;
+    transition: all 0.2s ease-in-out;
+    border-radius: 0.25rem;
  }

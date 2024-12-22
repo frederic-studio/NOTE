@@ -35,7 +35,6 @@ noteContainer.addEventListener('keydown', (e) => {
     targetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
     
     if (e.key === "Backspace") {
-        e.preventDefault();
         handleBackspace(e);
     }
 
@@ -59,6 +58,7 @@ function handleBackspace(e) {
     const textContent = e.target.textContent;
 
     if (selection.rangeCount > 0 && !selection.isCollapsed) {
+        e.preventDefault();
         const range = selection.getRangeAt(0);
         const startOffset = range.startOffset;
         const endOffset = range.endOffset;
@@ -67,19 +67,17 @@ function handleBackspace(e) {
         caretPosition(e.target, 'set', startOffset);
     } else {
         if (textContent.length === 1 && caretPos === 1) {
+            e.preventDefault();
             e.target.innerHTML = '';
         } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
+            e.preventDefault();
             if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
                 addItems(e.target, 'paragraph');
                 handleRemovingNode('Empty', e.target);
                 return;
             }
             handleRemovingNode(null, e.target);
-        } else if (caretPos > 0) {
-            const newText = textContent.slice(0, caretPos - 1) + textContent.slice(caretPos);
-            e.target.textContent = newText;
-            caretPosition(e.target, 'set', caretPos - 1);
-        }
+        } 
     }
 }
 
@@ -128,15 +126,15 @@ function addList(targetNode, newType) {
         return addItems(targetNode, 'paragraph');
     } else {
         let e = clone.firstElementChild.children[0];
-        targetNode.parentNode.closest(`[data-name='${newItem}'] > *`).insertAdjacentElement('afterend', e);
+        (targetNode.parentNode.closest(`[data-name='${newItem}'] > *`) || targetNode).insertAdjacentElement('afterend', e);
         newElement = e.querySelector('[contenteditable]') || e;
     }
-
+    targetNode.innerText = targetNode.innerText.substring(0, caretPosition(targetNode, 'get'));
     newElement.hasAttribute('contenteditable') 
         ? newElement.focus() 
         : newElement.querySelector('[contenteditable]').focus();
-
-    (newElement.querySelector('[contenteditable]') || newElement).textContent = textAfterCaret;
+    
+    (newElement.querySelector('[contenteditable]') || newElement).innerText = textAfterCaret;
     return newElement;
 }
 
@@ -181,6 +179,13 @@ function handleRemovingNode(action, target, newType) {
         caretPosition(newElement, 'set', pos);
         return newElement;
     }
+}
+
+function focusView(target) {
+    const offset = window.innerHeight * (window.innerWidth < 600 ? 0.2 : 0.5);
+    const rect = target.getBoundingClientRect();
+    const scrollY = window.scrollY + rect.top - offset;
+    window.scrollTo({top: scrollY, behavior: 'smooth'});
 }
 
 // Helper functions
@@ -378,6 +383,96 @@ populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
 commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
 commandInput.addEventListener('blur', () => resetCommandPalette(targetNode));
-noteContainer.addEventListener('focusin', (e) => {caretPosition(e.target, 'set', 'end');});
+noteContainer.addEventListener('focusin', (e) => {caretPosition(e.target, 'set', 'end'); focusView(e.target);});
 
 
+function initializeSelectionRectangle() {
+    let isMouseDown = false;
+    let startX, startY;
+    const selectionRectangle = document.createElement('div');
+    selectionRectangle.style.position = 'absolute';
+    selectionRectangle.style.border = '2px solid #395cc6';
+    selectionRectangle.style.backgroundColor = '#395cc622';
+    selectionRectangle.style.borderRadius = '5px';
+    selectionRectangle.style.pointerEvents = 'none';
+    document.body.appendChild(selectionRectangle);
+
+    document.addEventListener('mousedown', (e) => {
+        if (!noteContainer.contains(e.target)) {
+            isMouseDown = true;
+            startX = e.pageX;
+            startY = e.pageY;
+            selectionRectangle.style.left = `${startX}px`;
+            selectionRectangle.style.top = `${startY}px`;
+            selectionRectangle.style.width = '0px';
+            selectionRectangle.style.height = '0px';
+            selectionRectangle.style.display = 'block';
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        const currentX = e.pageX;
+        const currentY = e.pageY;
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        selectionRectangle.style.width = `${width}px`;
+        selectionRectangle.style.height = `${height}px`;
+        selectionRectangle.style.left = `${Math.min(currentX, startX)}px`;
+        selectionRectangle.style.top = `${Math.min(currentY, startY)}px`;
+
+        noteContainer.querySelectorAll('[contenteditable]').forEach(child => {
+            const rect = child.getBoundingClientRect();
+            const isInSelection = !(
+                rect.right < Math.min(startX, currentX) ||
+                rect.left > Math.max(startX, currentX) ||
+                rect.bottom < Math.min(startY, currentY) ||
+                rect.top > Math.max(startY, currentY)
+            );
+            if (isInSelection) {
+                child.classList.add('selected');
+            } else {
+                child.classList.remove('selected');
+            }
+        });
+
+        if (currentY < window.scrollY + 50) {
+            window.scrollBy(0, -10);
+        } else if (currentY > window.scrollY + window.innerHeight - 50) {
+            window.scrollBy(0, 10);
+        }
+    });
+
+    let isMouseUp = false;
+
+    document.addEventListener('mouseup', () => {
+        isMouseDown = false;
+        isMouseUp = true;
+        selectionRectangle.style.display = 'none';
+        setTimeout(() => { isMouseUp = false; }, 0);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (isMouseUp) return;
+        if (e.shiftKey) {
+            const selectedNode = e.target.closest('.selected');
+            if (selectedNode) {
+                selectedNode.classList.remove('selected');
+                return;
+            }
+        }
+        document.querySelectorAll('.selected').forEach(child => {
+            console.log('el caca!')
+            child.classList.remove('selected');
+        });
+    });
+
+    noteContainer.addEventListener('focusin', (e) => {
+        if (e.shiftKey) return;
+        document.querySelectorAll('.selected').forEach(child => {
+            child.classList.remove('selected');
+        });
+    });
+}
+
+initializeSelectionRectangle();
