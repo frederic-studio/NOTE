@@ -115,14 +115,18 @@ function addList(targetNode, newType) {
     let template = document.getElementById(`template-${newItem}`);
     let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
     let clone = template.content.cloneNode(true);
+    const ancestor = targetNode.closest('#note-container > *');
     let newElement;
 
     if (newType) {
         newElement = clone.firstElementChild;
-        const ancestor = targetNode.closest('#note-container > *');
         (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
         handleRemovingNode('Empty', targetNode, newType);
     } else if (!targetNode.textContent) {
+        let lastChild = ancestor.lastElementChild;
+        console.log('lastChild', lastChild)
+        console.log('targetNode', targetNode)
+        if (!lastChild.contains(targetNode)) splitList(targetNode);
         return addItems(targetNode, 'paragraph');
     } else {
         let e = clone.firstElementChild.children[0];
@@ -157,6 +161,16 @@ function handleRemovingNode(action, target, newType) {
         return;
     } else {
         if (!targetParent) {
+            if (target.previousElementSibling.getAttribute('data-name') === target.nextElementSibling?.getAttribute('data-name')) {
+                newElement = (contentEditableElements ?? []).length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
+                let listBefore = target.previousElementSibling;
+                let listAfter = target.nextElementSibling;
+                while (listAfter.firstElementChild) {
+                    listBefore.appendChild(listAfter.firstElementChild);
+                }
+                listAfter.remove();
+                target.remove();
+            }
             newElement = (contentEditableElements ?? []).length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
             target.remove();
         } else {
@@ -181,11 +195,35 @@ function handleRemovingNode(action, target, newType) {
     }
 }
 
-function focusView(target) {
-    const offset = window.innerHeight * (window.innerWidth < 600 ? 0.2 : 0.5);
-    const rect = target.getBoundingClientRect();
-    const scrollY = window.scrollY + rect.top - offset;
-    window.scrollTo({top: scrollY, behavior: 'smooth'});
+function splitList(targetNode) {
+    console.log('splitList')
+    let previousListItem = [];
+    let nextListItem = [];
+    let listItem = targetNode.parentNode.closest(`[data-name=${targetNode.getAttribute('data-name')}] > *`) || targetNode;
+    while (listItem.previousElementSibling) {
+        previousListItem.unshift(listItem.previousElementSibling);
+        listItem = listItem.previousElementSibling;
+    }
+    
+    listItem = targetNode.parentNode.closest(`[data-name=${targetNode.getAttribute('data-name')}] > *`) || targetNode;
+
+    while (listItem.nextElementSibling) {
+        nextListItem.unshift(listItem.nextElementSibling);
+        listItem = listItem.nextElementSibling;
+    }
+    let actualList = targetNode.parentNode.closest(`[data-name=${targetNode.getAttribute('data-name')}]`);
+    const newListBefore = document.createElement(actualList.tagName);
+    const newListAfter = document.createElement(actualList.tagName);
+    newListBefore.appendChild(targetNode.parentNode.closest(`[data-name=${targetNode.getAttribute('data-name')}] > *`) || targetNode);
+    actualList.replaceWith(newListBefore, newListAfter);
+    previousListItem.forEach(item => newListBefore.appendChild(item));
+    nextListItem.reverse().forEach(item => newListAfter.appendChild(item));
+
+    Array.from(actualList.attributes).forEach(attr => {
+        newListBefore.setAttribute(attr.name, attr.value);
+        newListAfter.setAttribute(attr.name, attr.value);
+    });
+    return targetNode;
 }
 
 // Helper functions
@@ -383,7 +421,7 @@ populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
 commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
 commandInput.addEventListener('blur', () => resetCommandPalette(targetNode));
-noteContainer.addEventListener('focusin', (e) => {caretPosition(e.target, 'set', 'end'); focusView(e.target);});
+noteContainer.addEventListener('focusin', (e) => {caretPosition(e.target, 'set', 'end');});
 
 
 function initializeSelectionRectangle() {
