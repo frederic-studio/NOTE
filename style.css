@@ -59,12 +59,23 @@ svg path {fill: var(--accent-color);}
     anchor-name: --note-container;
 }
 
-#note-container  *[contenteditable]:empty:not(p)::after,
-#note-container  p[contenteditable]:focus:empty::after {
+#note-container  *[contenteditable]:empty:not(p)::after {
     content: attr(data-placeholder);
     color: var(--accent-color);
     display: inline;
     font-style: italic;
+}
+
+#note-container p[contenteditable]:empty:focus:after {
+    content: attr(data-placeholder) " or press '/' to add a new component";
+    vertical-align: text-bottom;
+    color: var(--accent-color);
+    display: inline-flex;
+    font-style: italic;
+}
+
+#note-container p[contenteditable]:focus:empty::after svg {
+    transform: scale(4);
 }
 
 #command-container:popover-open {
@@ -154,9 +165,16 @@ svg path {fill: var(--accent-color);}
     border-radius: 0.25rem;
 }
 
-#command-palette:has(.command-item:not(.select):focus-within, .command-item:not(.select):hover) .command-item.select {
+#command-palette:has(.command-item:not(.select):focus-within, 
+.command-item:not(.select):hover) .command-item.select {
     background: none;
 }
+
+code.code-sample {
+    position: relative;
+    background-color: var(--card-background-color);
+}
+
 
 
 @media screen and (max-width: 600px) {

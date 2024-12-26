@@ -1,3 +1,4 @@
+
 const noteContainer = document.getElementById('note-container');
 const commandInput = document.getElementById('command-input');
 const commandPalette = document.getElementById('command-palette');
@@ -17,6 +18,7 @@ const commands = {
         {Name: "checklist", Type: "form"}
     ],
     Object: [
+        {Name: "code", Type: "pre"},
         {Name: "image", Type: "img"}, 
         {Name: "table", Type: "table"}, 
         {Name: "link", Type: "a"}
@@ -32,8 +34,7 @@ const commands = {
 // 6. Handle removing nodes and empty nodes
 
 noteContainer.addEventListener('keydown', (e) => {
-    targetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
-    
+    targetNode = e.target.closest('[contenteditable="true"]:not([data-modifier="false"])'); 
     if (e.key === "Backspace") {
         handleBackspace(e);
     }
@@ -107,6 +108,18 @@ function addText(targetNode, newType) {
     newElement.focus();
     newElement.innerText = textAfterCaret;
     handleRemovingNode('Empty', targetNode, newType);
+    return newElement;
+}
+
+function addObject(targetNode, newType) {
+    let newItem = newType || targetNode.getAttribute('data-name');
+    let template = document.getElementById(`template-${newItem}`);
+    const ancestor = targetNode.closest('#note-container > *');
+    let newElement = template.content.cloneNode(true).firstElementChild;
+    ancestor.insertAdjacentElement('afterend', newElement);
+    handleRemovingNode('Empty', targetNode, newType);
+    newElement.querySelector('[contenteditable]').focus();
+    
     return newElement;
 }
 
@@ -248,14 +261,16 @@ function caretPosition(element, action = 'get', position = 0) {
             textNode = element.firstChild;
         }
 
-        if (position === 'start') {
-            range.setStart(textNode, 0);
-        } else if (position === 'end') {
+        if (textNode && typeof textNode.textContent === 'string') {
+            // If position exceeds text length, place caret at the end
+            const safePosition = Math.min(position, textNode.textContent.length);
+            range.setStart(textNode, safePosition);
+        } else {
+            // Fallback to setting caret at the end of the element
             range.selectNodeContents(element);
             range.collapse(false);
-        } else {
-            range.setStart(textNode || element, Math.min(position, (textNode?.textContent || "").length));
         }
+
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -316,7 +331,7 @@ async function populateCommandPalette() {
             const svgContent = svgs[svgIndex] || '';
 
             li.innerHTML = `
-                <button onclick="addItems(targetNode, '${command.Name}')">
+                <button onclick="addItemsCommandPalette(this)" data-name="${command.Name}">
                     ${svgContent}
                     <h5>${command.Name}</h5>
                 </button>`;
@@ -325,6 +340,10 @@ async function populateCommandPalette() {
         container.appendChild(ul);
         commandPalette.appendChild(container);
     }
+}
+
+function addItemsCommandPalette(e) {
+    addItems(targetNode, e.getAttribute('data-name'));
 }
 
 function resetCommandPalette(target) {

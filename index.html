@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Note Editor</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="prism.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -12,35 +13,37 @@
 </head>
 <body>
     <div id="note-container" spellcheck="false">
-        <h1 data-placeholder="Page title" data-name="display" contenteditable="true" class="title-page">À fixer quoi :</h1>
-        <form data-name="checklist">
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
-                <input type="checkbox" name="checklist" tabindex="-1" checked>
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Press enter dans un empty list item devrait transformer le node en paragraphe et pas l'ajouter après, quitte à scinder en deux une listes.</label>
-            </div><div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
-                <input type="checkbox" name="checklist" tabindex="-1" checked>
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Bon visiblement il devrait y avoir un plus grand espacements entre chaque ligne sérieux, c'est quoi ce bordel, aussi il est impératif de regarder ce qui se trame en fond, cela semble utiliser beaucoup de ressource. Rendant le tout peu fluide et dynamique.</label>
-            </div><div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
-                <input type="checkbox" name="checklist" tabindex="-1" checked>
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Limiter la modification du comportement natif du backspace et l'appliquer seulement lorsqu'un node auquel son textContent à été modifié. Cela semble énormément ralentir le processus. Limiter si possible le recalcul du caret.</label>
-            </div><div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
-                <input type="checkbox" name="checklist" tabindex="-1">
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Comment s'assurer que le targetNode soit toujours alligné à la bonne hauteur de l'écran <i>(si nécessaire)</i>. </label>
-            </div><div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
-                <input type="checkbox" name="checklist" tabindex="-1">
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Rendre le command palette réactif à sa position dans l'écran, parfois il peut être caché.&nbsp;</label>
-            </div><div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
-                <input type="checkbox" name="checklist" tabindex="-1">
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Ajouter un SVG au placeholder de paragraphe.</label>
-            </div>
-        </form>
-        <p contenteditable="true" data-name="paragraph" data-placeholder="Type to add a paragraph"></p>
+        <div id="note-container" spellcheck="false">
+            <h1 data-placeholder="Page title" data-name="display" contenteditable="true" class="title-page">À fixer quoi :</h1>
+            <form data-name="checklist">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
+                    <input type="checkbox" name="checklist" tabindex="-1">
+                    <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Ajouter l'objet code-block</label>
+                </div><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
+                    <input type="checkbox" name="checklist" tabindex="-1">
+                    <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Trouver un moyen pour les objets d'intérargir sans contrevenir aux autres items</label>
+                </div><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
+                    <input type="checkbox" name="checklist" tabindex="-1">
+                    <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Ajouter l'intéractions avec les items selected.</label>
+                </div><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
+                    <input type="checkbox" name="checklist" tabindex="-1">
+                    <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Lorsque textAfterCaret ajouter l'innerHTML tout en restant alerte face aux attaques XSS.</label>
+                </div><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
+                    <input type="checkbox" name="checklist" tabindex="-1">
+                    <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Ajouter la fonction tabs et shift tabs, (espace et retrait d'espace, imbrication et retrait de l'imbrication dans les listes)</label>
+                </div><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"></path></svg>
+                    <input type="checkbox" name="checklist" tabindex="-1">
+                    <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist">Avoir toujours un paragraph à la fin du noteContainer?</label>
+                </div>
+
+            </form>
+        </div>
     </div>
     <div id="command-container" popover>
         <div id="command-search">
@@ -79,6 +82,13 @@
         </form>
     </template>
 
+    <template id="template-code">
+        <code class="code-sample" data-name="code">
+            <pre class="language-javascript code" contenteditable="true" data-modifier="false" data-name="code" data-placeholder="Type to add code"></pre>
+          </code>
+    </template>
+
     <script src="script.js"></script>
+    <script src="prism.js"></script>
 </body>
 </html>
