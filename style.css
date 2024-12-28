@@ -51,20 +51,87 @@ svg path {fill: var(--accent-color);}
 
 [contenteditable] {
     width: 100%;
-    outline: #395cc600 solid 1px;
+    outline: none;
     transition: all 0.2s ease-in-out;
 }
-
-#note-container > *:last-child {
+[data-target="true"] {
     anchor-name: --note-container;
 }
 
+
+/* Add this to your CSS file */
+.note-container-dimmed * {
+    color: var(--border-color) !important;
+    transition: all 0.2s ease-in-out;
+
+    p[data-target="true"]:empty:after {
+        content: attr(data-placeholder) " or press '/' to add a new component" !important;
+        vertical-align: text-bottom !important;
+        color: var(--accent-color) !important;
+        display: inline-flex !important;
+        font-style: italic !important;
+    }
+
+    [data-target="true"]:empty::after {
+        content: attr(data-placeholder) !important;
+        vertical-align: text-bottom !important;
+        color: var(--accent-color) !important;
+        display: inline-flex !important;
+        font-style: italic !important;
+    }
+
+
+
+    input[type="checkbox"] {
+        outline: 2px solid var(--border-color) !important;
+    }
+
+    svg path {
+        fill: var(--border-color) !important;
+    }
+}
+
+p[data-target="true"]:empty::after {
+    content: attr(data-placeholder) " or press '/' to add a new component" !important;
+    vertical-align: text-bottom !important;
+    color: var(--accent-color) !important;
+    display: inline-flex !important;
+    font-style: italic !important;
+}
+
+
+.note-container-dimmed [data-target="true"] {
+    color: var(--text-color) !important;
+}
+
+
+#note-container > *:has(:focus-within) {
+    outline: none;
+    transition: all 0.2s ease-in-out;
+}
 #note-container  *[contenteditable]:empty:not(p)::after {
     content: attr(data-placeholder);
     color: var(--accent-color);
     display: inline;
     font-style: italic;
 }
+
+/* Add this to your CSS file */
+.note-container-dimmed * {
+    color: var(--border-color) !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.note-container-dimmed [data-target="true"] {
+    color: var(--text-color) !important;
+}
+
+.dimed {
+    color: var(--accent-color) !important;
+    transition: color 0.2s ease-in-out;
+}
+
+
 
 #note-container p[contenteditable]:empty:focus:after {
     content: attr(data-placeholder) " or press '/' to add a new component";
@@ -78,12 +145,23 @@ svg path {fill: var(--accent-color);}
     transform: scale(4);
 }
 
+#command-container {
+    transition-behavior: allow-discrete;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    opacity: 0;
+    transform: translateY(2rem);
+}
+
 #command-container:popover-open {
     padding: 0px;
+    opacity: 1;
     margin: 0;
     inset: auto;
-    top: anchor(top);
+    top: anchor(bottom);
+    transform: translateY(1rem);
     left: anchor(left);
+    transition-behavior: allow-discrete;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 
     position-anchor: --note-container;
 
@@ -92,6 +170,12 @@ svg path {fill: var(--accent-color);}
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     position: sticky;
+
+    @starting-style {
+        opacity: 0;
+        transform: translateY(1.5rem);
+
+    }
 }
 
 #command-search {

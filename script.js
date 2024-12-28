@@ -1,4 +1,3 @@
-
 const noteContainer = document.getElementById('note-container');
 const commandInput = document.getElementById('command-input');
 const commandPalette = document.getElementById('command-palette');
@@ -18,7 +17,6 @@ const commands = {
         {Name: "checklist", Type: "form"}
     ],
     Object: [
-        {Name: "code", Type: "pre"},
         {Name: "image", Type: "img"}, 
         {Name: "table", Type: "table"}, 
         {Name: "link", Type: "a"}
@@ -33,8 +31,20 @@ const commands = {
 // 5. Handle adding new list and list items
 // 6. Handle removing nodes and empty nodes
 
+
+
+
 noteContainer.addEventListener('keydown', (e) => {
-    targetNode = e.target.closest('[contenteditable="true"]:not([data-modifier="false"])'); 
+    const newTargetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
+    if (targetNode && targetNode !== newTargetNode) {
+        targetNode.removeAttribute('data-target');
+        removeStaggeredDimming();
+    }
+    targetNode = newTargetNode;
+    if (targetNode) {
+        targetNode.setAttribute('data-target', 'true');
+    }
+    
     if (e.key === "Backspace") {
         handleBackspace(e);
     }
@@ -47,6 +57,8 @@ noteContainer.addEventListener('keydown', (e) => {
 
     if (e.key === "/") {
         e.preventDefault();
+        if (!e.target.textContent) e.target.innerHTML = '';
+        toggleSiblingsDimed(e.target); 
         commandPaletteContainer.showPopover();
         e.target.blur();
         (window.innerWidth > 600) && commandInput.focus();
@@ -108,18 +120,6 @@ function addText(targetNode, newType) {
     newElement.focus();
     newElement.innerText = textAfterCaret;
     handleRemovingNode('Empty', targetNode, newType);
-    return newElement;
-}
-
-function addObject(targetNode, newType) {
-    let newItem = newType || targetNode.getAttribute('data-name');
-    let template = document.getElementById(`template-${newItem}`);
-    const ancestor = targetNode.closest('#note-container > *');
-    let newElement = template.content.cloneNode(true).firstElementChild;
-    ancestor.insertAdjacentElement('afterend', newElement);
-    handleRemovingNode('Empty', targetNode, newType);
-    newElement.querySelector('[contenteditable]').focus();
-    
     return newElement;
 }
 
@@ -239,6 +239,66 @@ function splitList(targetNode) {
     return targetNode;
 }
 
+// Helper function
+function findSibling(node, isNext) {
+    const direction = isNext ? 'nextElementSibling' : 'previousElementSibling';
+    const method = isNext ? 'shift' : 'pop';
+
+    // Direct sibling
+    let sibling = node[direction];
+    if (sibling?.hasAttribute('contenteditable')) return sibling;
+
+    // Ancestor sibling
+    let ancestor = node.parentNode?.closest(`[data-name='${node.getAttribute('data-name')}'] > *`);
+    if (ancestor?.[direction]) {
+        const elements = Array.from(ancestor[direction].querySelectorAll('[contenteditable]')) || [];
+        sibling = elements[method]() || ancestor[direction];
+        if (sibling) return sibling;
+    }
+
+    // Container level sibling
+    let parent = node.closest('#note-container > *');
+    if (parent?.[direction]) {
+        const elements = Array.from(parent[direction].querySelectorAll('[contenteditable]')) || [];
+        sibling = elements[method]() || parent[direction];
+        if (sibling) return sibling;
+    }
+
+    return null;
+}
+
+function toggleSiblingsDimed(node, remove = false) {
+    // Get all contenteditable elements within the container
+    const allEditableElements = Array.from(document.querySelectorAll('#note-container [contenteditable]'));
+
+    // Find the index of the target node
+    const targetIndex = allEditableElements.indexOf(node);
+
+    if (targetIndex === -1) return; // Exit if the node is not found
+
+    // Split the list into elements before and after the target node
+    const elementsBefore = allEditableElements.slice(0, targetIndex);
+    const elementsAfter = allEditableElements.slice(targetIndex + 1);
+
+    // Reverse the elementsBefore array to start from the end
+    const reversedElementsBefore = elementsBefore.reverse();
+
+    // Apply the dimed class with a timeout
+    reversedElementsBefore.forEach((element, i) => {
+        setTimeout(() => element.classList[remove ? 'remove' : 'add']('dimed'), i * 100);
+    });
+
+    elementsAfter.forEach((element, i) => {
+        setTimeout(() => element.classList[remove ? 'remove' : 'add']('dimed'), i * 100);
+    });
+}
+
+
+
+
+
+
+
 // Helper functions
 // 1. Get/Set caret position
 // 2. Find commands details
@@ -261,16 +321,14 @@ function caretPosition(element, action = 'get', position = 0) {
             textNode = element.firstChild;
         }
 
-        if (textNode && typeof textNode.textContent === 'string') {
-            // If position exceeds text length, place caret at the end
-            const safePosition = Math.min(position, textNode.textContent.length);
-            range.setStart(textNode, safePosition);
-        } else {
-            // Fallback to setting caret at the end of the element
+        if (position === 'start') {
+            range.setStart(textNode, 0);
+        } else if (position === 'end') {
             range.selectNodeContents(element);
             range.collapse(false);
+        } else {
+            range.setStart(textNode || element, Math.min(position, (textNode?.textContent || "").length));
         }
-
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -331,7 +389,7 @@ async function populateCommandPalette() {
             const svgContent = svgs[svgIndex] || '';
 
             li.innerHTML = `
-                <button onclick="addItemsCommandPalette(this)" data-name="${command.Name}">
+                <button onclick="addItems(targetNode, '${command.Name}')">
                     ${svgContent}
                     <h5>${command.Name}</h5>
                 </button>`;
@@ -340,10 +398,6 @@ async function populateCommandPalette() {
         container.appendChild(ul);
         commandPalette.appendChild(container);
     }
-}
-
-function addItemsCommandPalette(e) {
-    addItems(targetNode, e.getAttribute('data-name'));
 }
 
 function resetCommandPalette(target) {
@@ -360,6 +414,7 @@ function resetCommandPalette(target) {
         caretPosition(target || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
     }
     commandPaletteContainer.hidePopover();
+    noteContainer.classList.remove('note-container-dimmed');
 }
 
 function filterCommandPalette(searchTerm) {
@@ -440,7 +495,21 @@ populateCommandPalette();
 commandInput.addEventListener('keydown', handleKeyNavigation);
 commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
 commandInput.addEventListener('blur', () => resetCommandPalette(targetNode));
-noteContainer.addEventListener('focusin', (e) => {caretPosition(e.target, 'set', 'end');});
+noteContainer.addEventListener('focusin', (e) => {
+    toggleSiblingsDimed(e.target, true);
+    if (e.shiftKey) return;
+    document.querySelectorAll('.selected').forEach(child => {
+        child.classList.remove('selected');
+    });
+    const newTargetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
+    if (targetNode && targetNode !== newTargetNode) {
+        targetNode.removeAttribute('data-target');
+    }
+    targetNode = newTargetNode;
+    if (targetNode) {
+        targetNode.setAttribute('data-target', 'true');
+    }
+});
 
 
 function initializeSelectionRectangle() {
