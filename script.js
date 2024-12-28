@@ -38,7 +38,6 @@ noteContainer.addEventListener('keydown', (e) => {
     const newTargetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
     if (targetNode && targetNode !== newTargetNode) {
         targetNode.removeAttribute('data-target');
-        removeStaggeredDimming();
     }
     targetNode = newTargetNode;
     if (targetNode) {
@@ -58,7 +57,6 @@ noteContainer.addEventListener('keydown', (e) => {
     if (e.key === "/") {
         e.preventDefault();
         if (!e.target.textContent) e.target.innerHTML = '';
-        toggleSiblingsDimed(e.target); 
         commandPaletteContainer.showPopover();
         e.target.blur();
         (window.innerWidth > 600) && commandInput.focus();
@@ -267,33 +265,6 @@ function findSibling(node, isNext) {
     return null;
 }
 
-function toggleSiblingsDimed(node, remove = false) {
-    // Get all contenteditable elements within the container
-    const allEditableElements = Array.from(document.querySelectorAll('#note-container [contenteditable]'));
-
-    // Find the index of the target node
-    const targetIndex = allEditableElements.indexOf(node);
-
-    if (targetIndex === -1) return; // Exit if the node is not found
-
-    // Split the list into elements before and after the target node
-    const elementsBefore = allEditableElements.slice(0, targetIndex);
-    const elementsAfter = allEditableElements.slice(targetIndex + 1);
-
-    // Reverse the elementsBefore array to start from the end
-    const reversedElementsBefore = elementsBefore.reverse();
-
-    // Apply the dimed class with a timeout
-    reversedElementsBefore.forEach((element, i) => {
-        setTimeout(() => element.classList[remove ? 'remove' : 'add']('dimed'), i * 100);
-    });
-
-    elementsAfter.forEach((element, i) => {
-        setTimeout(() => element.classList[remove ? 'remove' : 'add']('dimed'), i * 100);
-    });
-}
-
-
 
 
 
@@ -414,7 +385,6 @@ function resetCommandPalette(target) {
         caretPosition(target || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
     }
     commandPaletteContainer.hidePopover();
-    noteContainer.classList.remove('note-container-dimmed');
 }
 
 function filterCommandPalette(searchTerm) {
@@ -496,7 +466,6 @@ commandInput.addEventListener('keydown', handleKeyNavigation);
 commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
 commandInput.addEventListener('blur', () => resetCommandPalette(targetNode));
 noteContainer.addEventListener('focusin', (e) => {
-    toggleSiblingsDimed(e.target, true);
     if (e.shiftKey) return;
     document.querySelectorAll('.selected').forEach(child => {
         child.classList.remove('selected');
@@ -600,5 +569,16 @@ function initializeSelectionRectangle() {
         });
     });
 }
+
+const range = document.getElementById('ch');
+const rangeSpan = document.getElementById('ch-value');
+range.value = noteContainer.getAttribute('data-width');
+rangeSpan.textContent = range.value;
+
+range.addEventListener('input', (e) => {
+    rangeSpan.textContent = e.target.value;
+    noteContainer.setAttribute('data-width', e.target.value);
+    noteContainer.style.width = e.target.value + 'ch';
+});
 
 initializeSelectionRectangle();
