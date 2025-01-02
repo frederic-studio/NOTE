@@ -31,9 +31,6 @@ const commands = {
 // 5. Handle adding new list and list items
 // 6. Handle removing nodes and empty nodes
 
-
-
-
 noteContainer.addEventListener('keydown', (e) => {
     const newTargetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
     if (targetNode && targetNode !== newTargetNode) {
@@ -51,12 +48,14 @@ noteContainer.addEventListener('keydown', (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
         const newElement = addItems(targetNode);
+        findSibling(targetNode, 'previous');
         targetNode = newElement;
     }
 
     if (e.key === "/") {
         e.preventDefault();
         if (!e.target.textContent) e.target.innerHTML = '';
+        lastCaretPosition = caretPosition(e.target, 'get');
         commandPaletteContainer.showPopover();
         e.target.blur();
         (window.innerWidth > 600) && commandInput.focus();
@@ -135,8 +134,6 @@ function addList(targetNode, newType) {
         handleRemovingNode('Empty', targetNode, newType);
     } else if (!targetNode.textContent) {
         let lastChild = ancestor.lastElementChild;
-        console.log('lastChild', lastChild)
-        console.log('targetNode', targetNode)
         if (!lastChild.contains(targetNode)) splitList(targetNode);
         return addItems(targetNode, 'paragraph');
     } else {
@@ -154,51 +151,39 @@ function addList(targetNode, newType) {
 }
 
 function handleRemovingNode(action, target, newType) {
-    let newElement;
-    let targetParent = target.parentNode?.closest(`[data-name='${target.getAttribute('data-name')}']`);
-    let contentEditableElements = target.previousElementSibling?.querySelectorAll('[contenteditable]');
+    let ancestor = target.parentNode?.closest(`[data-name='${target.getAttribute('data-name')}']`);
     let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
+    let newElement;
 
     if (action === 'Empty') {
         if (!target.textContent && !target.classList.contains('title-page') && newType) {
-            let ancestor = target.parentNode.closest(`[data-name="${target.getAttribute('data-name')}"]`);
-            if (ancestor) {
-                let childToRemove = Array.from(ancestor.children).find(child => child.contains(target));
-                ancestor.children.length > 1 ? childToRemove?.remove() : ancestor.remove();
-            } else {
-                target.remove();
-            }
-        }
+            ancestor ? (ancestor.contains(findSibling(target, 'previous')) 
+                     ? Array.from(ancestor.children).find(child => child.contains(target))?.remove() 
+                     : ancestor.remove()) 
+                     : target.remove(); 
+        } 
         return;
     } else {
-        if (!targetParent) {
+        newElement = findSibling(target, 'previous');
+        if (!ancestor) {
             if (target.previousElementSibling.getAttribute('data-name') === target.nextElementSibling?.getAttribute('data-name')) {
-                newElement = (contentEditableElements ?? []).length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
                 let listBefore = target.previousElementSibling;
                 let listAfter = target.nextElementSibling;
-                while (listAfter.firstElementChild) {
-                    listBefore.appendChild(listAfter.firstElementChild);
-                }
+                while ((el = listAfter.firstElementChild), el) listBefore.appendChild(el);
                 listAfter.remove();
-                target.remove();
-            }
-            newElement = (contentEditableElements ?? []).length > 0 ? Array.from(contentEditableElements).pop() : target.previousElementSibling.querySelector('[contenteditable]') || target.previousElementSibling;
+            } 
             target.remove();
         } else {
-            let currentNode = target;
-            while (currentNode.parentNode !== targetParent) {currentNode = currentNode.parentNode;}
-            if (targetParent.children.length > 1) {
-                newElement = currentNode === targetParent.children[0]
-                    ? targetParent.previousElementSibling?.querySelector('[contenteditable]') || targetParent.previousElementSibling
-                    : currentNode.previousElementSibling.querySelector('[contenteditable]') || currentNode.previousElementSibling;
+            let currentNode = Array.from(ancestor.children).find(child => child.contains(target));
+            if (ancestor.contains(findSibling(target, 'previous'))) {
                 currentNode.remove();
             } else {
                 newElement = addItems(target, 'paragraph');
-                targetParent.remove();
+                ancestor.remove();
                 return;
             }
         }
-        let pos =  newElement.textContent.length;
+        let pos = newElement.textContent.length;
         newElement.focus();
         newElement.textContent += textAfterCaret;
         caretPosition(newElement, 'set', pos);
@@ -206,8 +191,8 @@ function handleRemovingNode(action, target, newType) {
     }
 }
 
+
 function splitList(targetNode) {
-    console.log('splitList')
     let previousListItem = [];
     let nextListItem = [];
     let listItem = targetNode.parentNode.closest(`[data-name=${targetNode.getAttribute('data-name')}] > *`) || targetNode;
@@ -237,42 +222,25 @@ function splitList(targetNode) {
     return targetNode;
 }
 
-// Helper function
-function findSibling(node, isNext) {
-    const direction = isNext ? 'nextElementSibling' : 'previousElementSibling';
-    const method = isNext ? 'shift' : 'pop';
-
-    // Direct sibling
-    let sibling = node[direction];
-    if (sibling?.hasAttribute('contenteditable')) return sibling;
-
-    // Ancestor sibling
-    let ancestor = node.parentNode?.closest(`[data-name='${node.getAttribute('data-name')}'] > *`);
-    if (ancestor?.[direction]) {
-        const elements = Array.from(ancestor[direction].querySelectorAll('[contenteditable]')) || [];
-        sibling = elements[method]() || ancestor[direction];
-        if (sibling) return sibling;
-    }
-
-    // Container level sibling
-    let parent = node.closest('#note-container > *');
-    if (parent?.[direction]) {
-        const elements = Array.from(parent[direction].querySelectorAll('[contenteditable]')) || [];
-        sibling = elements[method]() || parent[direction];
-        if (sibling) return sibling;
-    }
-
-    return null;
-}
-
-
-
-
-
-
 // Helper functions
 // 1. Get/Set caret position
 // 2. Find commands details
+
+function findSibling(node, adjacent) {
+    let direction = adjacent === 'previous' ? 'previousElementSibling' : 'nextElementSibling';
+    let method = adjacent === 'previous' ? 'pop' : 'shift';
+    let ancestor = node?.parentNode?.closest(`[data-name=${node.getAttribute('data-name')}]`);
+    let sibling = null;
+
+    if (ancestor) {
+        let ancestorChildren = Array.from(ancestor.querySelectorAll('[contenteditable]'));
+        let index = ancestorChildren.indexOf(node);
+        sibling =ancestorChildren[index + (adjacent === 'previous' ? -1 : 1)] || (ancestor[direction] && [...ancestor[direction].querySelectorAll('[contenteditable]')][method]()) || (ancestor[direction]?.hasAttribute('contenteditable') ? ancestor[direction] : null);
+    } else {
+        sibling = (node[direction] && [...node[direction].querySelectorAll('[contenteditable]')][method]()) || (node[direction]?.hasAttribute('contenteditable') ? node[direction] : null);
+    }
+    return sibling;
+}
 
 function caretPosition(element, action = 'get', position = 0) {
     const selection = window.getSelection();
@@ -382,7 +350,7 @@ function resetCommandPalette(target) {
     commandPalette.querySelector('.select')?.classList.remove('select');
     if (target) {
         target || noteContainer.querySelector('[contenteditable]').focus();
-        caretPosition(target || noteContainer.querySelector('[contenteditable]'), 'set', 'end');
+        caretPosition(target || noteContainer.querySelector('[contenteditable]'), 'set', lastCaretPosition);
     }
     commandPaletteContainer.hidePopover();
 }
@@ -426,6 +394,13 @@ function handleKeyNavigation(e) {
     const currentIndex = allItems.indexOf(selected);
 
     if (e.key === 'Backspace' && !commandInput.value) {
+        e.preventDefault();
+        resetCommandPalette(targetNode);
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
         resetCommandPalette(targetNode);
         return;
     }
@@ -466,10 +441,6 @@ commandInput.addEventListener('keydown', handleKeyNavigation);
 commandInput.addEventListener('input', (e) => { filterCommandPalette(e.target.value)});
 commandInput.addEventListener('blur', () => resetCommandPalette(targetNode));
 noteContainer.addEventListener('focusin', (e) => {
-    if (e.shiftKey) return;
-    document.querySelectorAll('.selected').forEach(child => {
-        child.classList.remove('selected');
-    });
     const newTargetNode = e.target.closest('[contenteditable="true"]') || (() => { return; })();
     if (targetNode && targetNode !== newTargetNode) {
         targetNode.removeAttribute('data-target');
@@ -480,105 +451,24 @@ noteContainer.addEventListener('focusin', (e) => {
     }
 });
 
+const saveButton = document.getElementById('save-button');
 
-function initializeSelectionRectangle() {
-    let isMouseDown = false;
-    let startX, startY;
-    const selectionRectangle = document.createElement('div');
-    selectionRectangle.style.position = 'absolute';
-    selectionRectangle.style.border = '2px solid #395cc6';
-    selectionRectangle.style.backgroundColor = '#395cc622';
-    selectionRectangle.style.borderRadius = '5px';
-    selectionRectangle.style.pointerEvents = 'none';
-    document.body.appendChild(selectionRectangle);
-
-    document.addEventListener('mousedown', (e) => {
-        if (!noteContainer.contains(e.target)) {
-            isMouseDown = true;
-            startX = e.pageX;
-            startY = e.pageY;
-            selectionRectangle.style.left = `${startX}px`;
-            selectionRectangle.style.top = `${startY}px`;
-            selectionRectangle.style.width = '0px';
-            selectionRectangle.style.height = '0px';
-            selectionRectangle.style.display = 'block';
-        }
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isMouseDown) return;
-        const currentX = e.pageX;
-        const currentY = e.pageY;
-        const width = Math.abs(currentX - startX);
-        const height = Math.abs(currentY - startY);
-        selectionRectangle.style.width = `${width}px`;
-        selectionRectangle.style.height = `${height}px`;
-        selectionRectangle.style.left = `${Math.min(currentX, startX)}px`;
-        selectionRectangle.style.top = `${Math.min(currentY, startY)}px`;
-
-        noteContainer.querySelectorAll('[contenteditable]').forEach(child => {
-            const rect = child.getBoundingClientRect();
-            const isInSelection = !(
-                rect.right < Math.min(startX, currentX) ||
-                rect.left > Math.max(startX, currentX) ||
-                rect.bottom < Math.min(startY, currentY) ||
-                rect.top > Math.max(startY, currentY)
-            );
-            if (isInSelection) {
-                child.classList.add('selected');
-            } else {
-                child.classList.remove('selected');
-            }
-        });
-
-        if (currentY < window.scrollY + 50) {
-            window.scrollBy(0, -10);
-        } else if (currentY > window.scrollY + window.innerHeight - 50) {
-            window.scrollBy(0, 10);
-        }
-    });
-
-    let isMouseUp = false;
-
-    document.addEventListener('mouseup', () => {
-        isMouseDown = false;
-        isMouseUp = true;
-        selectionRectangle.style.display = 'none';
-        setTimeout(() => { isMouseUp = false; }, 0);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (isMouseUp) return;
-        if (e.shiftKey) {
-            const selectedNode = e.target.closest('.selected');
-            if (selectedNode) {
-                selectedNode.classList.remove('selected');
-                return;
-            }
-        }
-        document.querySelectorAll('.selected').forEach(child => {
-            console.log('el caca!')
-            child.classList.remove('selected');
-        });
-    });
-
-    noteContainer.addEventListener('focusin', (e) => {
-        if (e.shiftKey) return;
-        document.querySelectorAll('.selected').forEach(child => {
-            child.classList.remove('selected');
-        });
-    });
-}
-
-const range = document.getElementById('ch');
-const rangeSpan = document.getElementById('ch-value');
-range.value = noteContainer.getAttribute('data-width');
-rangeSpan.textContent = range.value;
-
-range.addEventListener('input', (e) => {
-    rangeSpan.textContent = e.target.value;
-    noteContainer.setAttribute('data-width', e.target.value);
-    noteContainer.style.width = e.target.value + 'ch';
+// Load saved notes when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    const savedNotes = localStorage.getItem('noteContent');
+    if (savedNotes) {
+        noteContainer.innerHTML = savedNotes;
+    }
 });
 
-initializeSelectionRectangle();
+// Save notes to localStorage when the button is clicked
+saveButton.addEventListener('click', () => {
+    const content = noteContainer.innerHTML;
+    localStorage.setItem('noteContent', content);
+    alert('Notes saved!');
+});
+
+// Optionally, save automatically when content changes
+noteContainer.addEventListener('input', () => {
+    localStorage.setItem('noteContent', noteContainer.innerHTML);
+});

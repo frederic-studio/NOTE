@@ -38,6 +38,15 @@ body {
     overflow-x: hidden;
 }
 
+button#save-button {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+}
+
 *::placeholder {color: var(--accent-color);}
 svg path {fill: var(--accent-color);}
 
@@ -66,6 +75,12 @@ p[data-target="true"]:empty::after {
     font-style: italic !important;
 }
 
+
+.note-container-dimmed [data-target="true"] {
+    color: var(--text-color) !important;
+}
+
+
 #note-container > *:has(:focus-within) {
     outline: none;
     transition: all 0.2s ease-in-out;
@@ -77,6 +92,20 @@ p[data-target="true"]:empty::after {
     font-style: italic;
 }
 
+/* Add this to your CSS file */
+.note-container-dimmed * {
+    color: var(--border-color) !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.note-container-dimmed [data-target="true"] {
+    color: var(--text-color) !important;
+}
+
+.dimed {
+    color: var(--accent-color) !important;
+    transition: color 0.2s ease-in-out;
+}
 
 
 
@@ -215,11 +244,9 @@ code.code-sample {
         width: calc(100% - 1rem);
         margin: 0;
         inset: 0.5rem;
-        bottom: env(safe-area-inset-bottom);
         top: unset;
-        height: 400px;
+        height: 500px;
         overflow: hidden;
-        transform: translateY(-0.5em);
     }
 
     #command-palette {
@@ -308,6 +335,7 @@ ul li::before {
     font-weight: 900;
     transform: translateX(-1.5rem);
 }
+
 
 
 h1 {
