@@ -17,6 +17,7 @@ input, button {background: none; border: none;}
         --accent-color:          hsl(225, 15%, 50%);
         --text-color:            hsl(225, 15%, 10%);
         scrollbar-color: var(--accent-color) var(--body-background-color);
+        --indent: 1rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +27,8 @@ input, button {background: none; border: none;}
         --border-color:          hsl(225, 15%, 15%);
         --accent-color:          hsl(225, 15%, 50%);
         --text-color:            hsl(225, 15%, 100%);
+        scrollbar-color: var(--accent-color) var(--body-background-color);
+        --indent: 1rem;
     }
 }
 
@@ -52,16 +55,17 @@ svg path {fill: var(--accent-color);}
 
 #note-container {
     text-wrap: stable;
+    position: relative;
     width: min(100% - 1rem, 60ch);
     margin: auto;
     margin-bottom: 100vh;
-    > * {margin: 0.5rem 0;}
+    overflow: hidden;
+    > *:not(ul, ol) {padding: 0.5rem 0; background-color: var(--body-background-color);}
 }
 
 [contenteditable] {
     width: 100%;
     outline: none;
-    transition: all 0.2s ease-in-out;
 }
 [data-target="true"] {
     anchor-name: --note-container;
@@ -76,10 +80,6 @@ p[data-target="true"]:empty::after {
 }
 
 
-.note-container-dimmed [data-target="true"] {
-    color: var(--text-color) !important;
-}
-
 
 #note-container > *:has(:focus-within) {
     outline: none;
@@ -92,23 +92,6 @@ p[data-target="true"]:empty::after {
     font-style: italic;
 }
 
-/* Add this to your CSS file */
-.note-container-dimmed * {
-    color: var(--border-color) !important;
-    transition: all 0.2s ease-in-out;
-}
-
-.note-container-dimmed [data-target="true"] {
-    color: var(--text-color) !important;
-}
-
-.dimed {
-    color: var(--accent-color) !important;
-    transition: color 0.2s ease-in-out;
-}
-
-
-
 #note-container p[contenteditable]:empty:focus:after {
     content: attr(data-placeholder) " or press '/' to add a new component";
     vertical-align: text-bottom;
@@ -117,9 +100,47 @@ p[data-target="true"]:empty::after {
     font-style: italic;
 }
 
-#note-container p[contenteditable]:focus:empty::after svg {
-    transform: scale(4);
+#note-container [data-indent] {
+
+    &::before {
+        content: '';
+        width: 1px;
+        transform: translateX(calc(calc(var(--indent)) * -1));
+        top: 0;
+        bottom: -100%;
+        background-color: var(--accent-color);
+        position: absolute;
+        z-index: -1;
+    }
 }
+
+#note-container [data-indent="1"] {
+    margin-left: var(--indent);
+}
+
+#note-container [data-indent="2"] {
+    margin-left: calc(var(--indent) * 2);
+}
+
+#note-container [data-indent="3"] {
+    margin-left: calc(var(--indent) * 3);
+}
+
+#note-container [data-indent="4"] {
+    margin-left: calc(var(--indent) * 4);
+}
+
+ol, ul {
+    &::before {
+        transform: translateX(calc(var(--indent) * -2.5)) !important;
+    }
+}
+
+
+
+
+
+
 
 #command-container {
     transition-behavior: allow-discrete;
@@ -230,11 +251,6 @@ p[data-target="true"]:empty::after {
     background: none;
 }
 
-code.code-sample {
-    position: relative;
-    background-color: var(--card-background-color);
-}
-
 
 
 @media screen and (max-width: 600px) {
@@ -255,13 +271,7 @@ code.code-sample {
     }
 }
 
-
-
-
-
-
-
- form[data-name="checklist"] {
+form[data-name="checklist"] {
      
     div {
         position: relative;
@@ -306,51 +316,27 @@ code.code-sample {
     border-radius: 0.25rem;
  }
 
-
-ol, ul {
-    counter-reset: ordered-list 0;
-    padding-inline-start: 2rem;
-    list-style: none;
-
-    li {
-        margin-bottom: 0.25rem;
-        counter-increment: ordered-list 1;
+details {
+    border: 1px solid red;
+    :not(summary) {
+        padding-left: 2rem;
     }
 }
 
 
-ol li::before {
-    font-variant-numeric: tabular-nums;
-    content: counter(ordered-list, decimal-leading-zero)".";
-    color: var(--accent-color);
-    position: absolute;
-    transform: translateX(-2rem);
-    font-weight: 600;
-}
-
-ul li::before {
-    content: '->';
-    color: var(--accent-color);
-    position: absolute;
-    font-weight: 900;
-    transform: translateX(-1.5rem);
-}
-
-
-
 h1 {
     font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
     font-weight: 800;
     letter-spacing: -0.025em;
 }
 
 h2 {
     font-size: 2rem;
-    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 h3 {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
 }

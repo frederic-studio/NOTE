@@ -57,10 +57,84 @@ noteContainer.addEventListener('keydown', (e) => {
         if (!e.target.textContent) e.target.innerHTML = '';
         lastCaretPosition = caretPosition(e.target, 'get');
         commandPaletteContainer.showPopover();
+        e.target.classList.add('selected');
         e.target.blur();
         (window.innerWidth > 600) && commandInput.focus();
     }
+
+    if (e.key === "Tab" && !e.shiftKey) {
+        e.preventDefault();
+        indent(e.target, 'increase')
+    }
+
+    if (e.key === "Tab" && e.shiftKey) {
+        e.preventDefault();
+        indent(e.target, 'decrease')
+    }
 });
+
+function indent(targetNode, action = 'increase', applied) {
+    // Prevent action on unmodifiable nodes
+    if (targetNode.classList.contains('unmodifiable') && getCommandDetail(targetNode.getAttribute('data-name')) === 'List') {
+        return;
+    }
+
+    // Initialize indent attributes if not set
+    if (!targetNode.hasAttribute('data-indent')) {
+        targetNode.setAttribute('data-indent', '0');
+    }
+
+    if (!targetNode.hasAttribute('data-initial-indent')) {
+        targetNode.setAttribute('data-initial-indent', targetNode.getAttribute('data-indent'));
+    }
+
+    const indent = parseInt(targetNode.getAttribute('data-indent'), 10);
+    const initialIndent = parseInt(targetNode.getAttribute('data-initial-indent'), 10);
+
+    // If applying to another node, propagate indent
+    if (applied instanceof HTMLElement) {
+        applied.setAttribute('data-indent', targetNode.getAttribute('data-indent'));
+        applied.setAttribute('data-initial-indent', targetNode.getAttribute('data-initial-indent'));
+        return;
+    }
+
+    // Helper to adjust subsequent siblings' indents
+    const adjustSiblingsIndent = (node, delta) => {
+        let sibling = node.nextElementSibling;
+        while (sibling) {
+            const siblingIndent = parseInt(sibling.getAttribute('data-indent') || '0', 10);
+            if (siblingIndent >= indent) {
+                sibling.setAttribute('data-indent', (siblingIndent + delta).toString());
+            }
+            sibling = sibling.nextElementSibling;
+        }
+    };
+
+    // Handle actions
+    if (action === 'decrease') {
+        if (indent > 0) {
+            targetNode.setAttribute('data-indent', (indent - 1).toString());
+            adjustSiblingsIndent(targetNode, -1);
+        }
+    } else if (action === 'increase') {
+        // Can only increase if within constraints
+        const previousSibling = targetNode.previousElementSibling;
+        const maxAllowedIndent = previousSibling
+            ? parseInt(previousSibling.getAttribute('data-indent') || '0', 10) + 1
+            : initialIndent + 1;
+
+        if (indent < maxAllowedIndent) {
+            targetNode.setAttribute('data-indent', (indent + 1).toString());
+        } else {
+            console.log('Cannot increase indent further.');
+        }
+    }
+}
+
+
+
+
+
 
 function handleBackspace(e) {
     const selection = window.getSelection();
@@ -108,14 +182,15 @@ function addText(targetNode, newType) {
     let newElement = document.createElement(getCommandDetail(newType, 'Type') || 'p');
     let placeholder = `Type to add a ${newType || 'paragraph'}`;
     let textAfterCaret = targetNode.textContent.substring(caretPosition(targetNode, 'get'));
-    const ancestor = targetNode.closest('#note-container > *');
-    (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
+    const ancestor = targetNode?.closest('#note-container > *') || targetNode;
+    ancestor.insertAdjacentElement('afterend', newElement);
     newElement.setAttribute('contenteditable', 'true');
     newElement.setAttribute('data-name', newType || 'paragraph');
     newElement.setAttribute('data-placeholder', placeholder);
     targetNode.textContent = targetNode.innerText.substring(0, caretPosition(targetNode, 'get'));
     newElement.focus();
     newElement.innerText = textAfterCaret;
+    indent(targetNode, 'increase', newElement)
     handleRemovingNode('Empty', targetNode, newType);
     return newElement;
 }
@@ -131,6 +206,7 @@ function addList(targetNode, newType) {
     if (newType) {
         newElement = clone.firstElementChild;
         (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
+        indent(targetNode, 'increase', newElement)
         handleRemovingNode('Empty', targetNode, newType);
     } else if (!targetNode.textContent) {
         let lastChild = ancestor.lastElementChild;
@@ -166,12 +242,12 @@ function handleRemovingNode(action, target, newType) {
     } else {
         newElement = findSibling(target, 'previous');
         if (!ancestor) {
-            if (target.previousElementSibling.getAttribute('data-name') === target.nextElementSibling?.getAttribute('data-name')) {
+             if (target.previousElementSibling.getAttribute('data-name') === target.nextElementSibling?.getAttribute('data-name')) {
                 let listBefore = target.previousElementSibling;
                 let listAfter = target.nextElementSibling;
                 while ((el = listAfter.firstElementChild), el) listBefore.appendChild(el);
                 listAfter.remove();
-            } 
+            }
             target.remove();
         } else {
             let currentNode = Array.from(ancestor.children).find(child => child.contains(target));
@@ -223,8 +299,9 @@ function splitList(targetNode) {
 }
 
 // Helper functions
-// 1. Get/Set caret position
-// 2. Find commands details
+// 1. findSibling
+// 2. Get/Set caret position
+// 3. Find commands details
 
 function findSibling(node, adjacent) {
     let direction = adjacent === 'previous' ? 'previousElementSibling' : 'nextElementSibling';
@@ -235,7 +312,7 @@ function findSibling(node, adjacent) {
     if (ancestor) {
         let ancestorChildren = Array.from(ancestor.querySelectorAll('[contenteditable]'));
         let index = ancestorChildren.indexOf(node);
-        sibling =ancestorChildren[index + (adjacent === 'previous' ? -1 : 1)] || (ancestor[direction] && [...ancestor[direction].querySelectorAll('[contenteditable]')][method]()) || (ancestor[direction]?.hasAttribute('contenteditable') ? ancestor[direction] : null);
+        sibling = ancestorChildren[index + (adjacent === 'previous' ? -1 : 1)] || (ancestor[direction] && [...ancestor[direction].querySelectorAll('[contenteditable]')][method]()) || (ancestor[direction]?.hasAttribute('contenteditable') ? ancestor[direction] : null);
     } else {
         sibling = (node[direction] && [...node[direction].querySelectorAll('[contenteditable]')][method]()) || (node[direction]?.hasAttribute('contenteditable') ? node[direction] : null);
     }
@@ -341,6 +418,7 @@ async function populateCommandPalette() {
 
 function resetCommandPalette(target) {
     const sections = commandPalette.querySelectorAll('.command-section');
+    target?.classList.remove('selected');
     commandInput.value = '';
     sections.forEach(section => {
         section.style.display = '';
