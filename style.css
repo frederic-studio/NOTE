@@ -19,6 +19,7 @@ input, button {background: none; border: none;}
         --placeholder-color:     hsl(225, 15%, 50%);
         scrollbar-color: var(--accent-color) var(--body-background-color);
         --indent: 1rem;
+        --fontSize: 1rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +32,7 @@ input, button {background: none; border: none;}
         --placeholder-color:     hsl(225, 15%, 50%);
         scrollbar-color: var(--accent-color) var(--body-background-color);
         --indent: 1rem;
+        --fontSize: 1rem;
     }
 }
 
@@ -42,22 +44,21 @@ body {
     background-color: var(--body-background-color);
     color: var(--text-color);
     height: 100%;
-    overflow-x: hidden;
 }
+
+
 
 svg path {fill: var(--accent-color);}
 
 #note-container {
-    text-wrap: stable;
     position: relative;
     width: min(100% - 1rem, 60ch);
     margin: auto;
     margin-bottom: 100vh;
-    overflow: hidden;
+    overflow-y: hidden;
 }
 
 [contenteditable] {
-    width: 100%;
     outline: none;
 }
 
@@ -211,6 +212,7 @@ p[data-target="true"]:empty::after {
         top: unset;
         height: 500px;
         overflow: hidden;
+        transform: translateY(0rem);
     }
 
     #command-palette {
@@ -279,24 +281,29 @@ form[data-name="checklist"] {
  }
 
 h1 {
-    font-size: 2.5rem;
-    padding-bottom: 0.5rem;
+    font-size: calc(var(--fontSize) * 3);
+    padding-bottom: 0.5em;
     font-weight: 800;
     letter-spacing: -0.025em;
 }
 
 h2 {
-    font-size: 2rem;
-    padding-bottom: 0.5rem;
+    font-size: calc(var(--fontSize) * 2.25);
+    padding-bottom: 0.5em;
 }
 
 h3 {
-    font-size: 1.5rem;
-    padding-bottom: 0.5rem;
+    font-size: calc(var(--fontSize) * 1.5);
+    padding-bottom: 0.5em;
 }
 
+#note-container {
+    font-size: var(--fontSize);
+}
 
-
+p {
+    max-width: 100%;
+}
 
 
 /* Indent */
@@ -345,10 +352,12 @@ h3 {
         padding-left: 2rem;
         position: relative;
         &::before {
-            content: counter(ol, decimal-leading-zero) ".";
+            content: counter(ol) ".";
             left: 0;
             position: absolute;
             font-variant-numeric: tabular-nums;
+            text-align: right;
+            width: 1.75rem;
         }
     }
 }

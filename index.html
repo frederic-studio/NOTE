@@ -16,8 +16,8 @@
     <div class="setting">
         <h4>Setting</h4>
         <button onclick="sPlaceholder()">placeholder</button>
-        <button onclick="sGrayedText()">grayed text</button>
         <button onclick="sDeleteContent()">delete content</button>
+        <label>Fontsize<input type="range" min="0.75" max="2.25" value="1" step="0.25" id="sFontsize"></label>
     </div>
     <div id="command-container" popover> 
         <div id="command-search">
@@ -61,7 +61,7 @@
             <pre class="language-javascript code" contenteditable="true" data-modifier="false" data-name="code" data-placeholder="Type to add code"></pre>
           </code>
     </template>
-
+    <script src="save.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

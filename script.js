@@ -148,7 +148,7 @@ function handleBackspace(e) {
         if (textContent.length === 1 && caretPos === 1) {
             e.preventDefault();
             e.target.innerHTML = '';
-        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
+        } else if (caretPos === 0 && !e.target.classList.contains('unmodifiable')) {
             e.preventDefault();
             if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
                 addItems(e.target, 'paragraph');
@@ -530,4 +530,16 @@ function sPlaceholder() {
     } else {
         document.documentElement.style.setProperty('--placeholder-color', 'transparent')
     }
+}
+
+const fontsizeSlider = document.getElementById('sFontsize') 
+fontsizeSlider.addEventListener('input', (e) =>  {
+    document.documentElement.style.setProperty('--fontSize', `${(e.target.value)}rem`)
+})
+
+function sDeleteContent() {
+    let title = noteContainer.firstElementChild
+    noteContainer.innerHTML = '';
+    title.innerHTML = '';
+    noteContainer.appendChild(title);
 }
