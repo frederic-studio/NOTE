@@ -41,9 +41,7 @@ noteContainer.addEventListener('keydown', (e) => {
         targetNode.setAttribute('data-target', 'true');
     }
     
-    if (e.key === "Backspace") {
-        handleBackspace(e);
-    }
+    if (e.key === "Backspace") handleBackspace(e);
 
     if (e.key === "Enter") {
         e.preventDefault();
@@ -57,7 +55,6 @@ noteContainer.addEventListener('keydown', (e) => {
         if (!e.target.textContent) e.target.innerHTML = '';
         lastCaretPosition = caretPosition(e.target, 'get');
         commandPaletteContainer.showPopover();
-        e.target.classList.add('selected');
         e.target.blur();
         (window.innerWidth > 600) && commandInput.focus();
     }
@@ -72,98 +69,6 @@ noteContainer.addEventListener('keydown', (e) => {
         indent(e.target, 'decrease')
     }
 });
-
-function indent(targetNode, action = 'increase', applied) {
-    // Prevent action on unmodifiable nodes
-    if (targetNode.classList.contains('unmodifiable') && getCommandDetail(targetNode.getAttribute('data-name')) === 'List') {
-        return;
-    }
-
-    // Initialize indent attributes if not set
-    if (!targetNode.hasAttribute('data-indent')) {
-        targetNode.setAttribute('data-indent', '0');
-    }
-
-    if (!targetNode.hasAttribute('data-initial-indent')) {
-        targetNode.setAttribute('data-initial-indent', targetNode.getAttribute('data-indent'));
-    }
-
-    const indent = parseInt(targetNode.getAttribute('data-indent'), 10);
-    const initialIndent = parseInt(targetNode.getAttribute('data-initial-indent'), 10);
-
-    // If applying to another node, propagate indent
-    if (applied instanceof HTMLElement) {
-        applied.setAttribute('data-indent', targetNode.getAttribute('data-indent'));
-        applied.setAttribute('data-initial-indent', targetNode.getAttribute('data-initial-indent'));
-        return;
-    }
-
-    // Helper to adjust subsequent siblings' indents
-    const adjustSiblingsIndent = (node, delta) => {
-        let sibling = node.nextElementSibling;
-        while (sibling) {
-            const siblingIndent = parseInt(sibling.getAttribute('data-indent') || '0', 10);
-            if (siblingIndent >= indent) {
-                sibling.setAttribute('data-indent', (siblingIndent + delta).toString());
-            }
-            sibling = sibling.nextElementSibling;
-        }
-    };
-
-    // Handle actions
-    if (action === 'decrease') {
-        if (indent > 0) {
-            targetNode.setAttribute('data-indent', (indent - 1).toString());
-            adjustSiblingsIndent(targetNode, -1);
-        }
-    } else if (action === 'increase') {
-        // Can only increase if within constraints
-        const previousSibling = targetNode.previousElementSibling;
-        const maxAllowedIndent = previousSibling
-            ? parseInt(previousSibling.getAttribute('data-indent') || '0', 10) + 1
-            : initialIndent + 1;
-
-        if (indent < maxAllowedIndent) {
-            targetNode.setAttribute('data-indent', (indent + 1).toString());
-        } else {
-            console.log('Cannot increase indent further.');
-        }
-    }
-}
-
-
-
-
-
-
-function handleBackspace(e) {
-    const selection = window.getSelection();
-    const caretPos = caretPosition(e.target, 'get');
-    const textContent = e.target.textContent;
-
-    if (selection.rangeCount > 0 && !selection.isCollapsed) {
-        e.preventDefault();
-        const range = selection.getRangeAt(0);
-        const startOffset = range.startOffset;
-        const endOffset = range.endOffset;
-        const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
-        e.target.textContent = newText;
-        caretPosition(e.target, 'set', startOffset);
-    } else {
-        if (textContent.length === 1 && caretPos === 1) {
-            e.preventDefault();
-            e.target.innerHTML = '';
-        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
-            e.preventDefault();
-            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
-                addItems(e.target, 'paragraph');
-                handleRemovingNode('Empty', e.target);
-                return;
-            }
-            handleRemovingNode(null, e.target);
-        } 
-    }
-}
 
 function addItems(targetNode, newType) {
     commandPaletteContainer.hidePopover();
@@ -208,7 +113,7 @@ function addList(targetNode, newType) {
         (ancestor ? ancestor : targetNode).insertAdjacentElement('afterend', newElement);
         indent(targetNode, 'increase', newElement)
         handleRemovingNode('Empty', targetNode, newType);
-    } else if (!targetNode.textContent) {
+    } else if (caretPosition(targetNode, 'get') === 0) {
         let lastChild = ancestor.lastElementChild;
         if (!lastChild.contains(targetNode)) splitList(targetNode);
         return addItems(targetNode, 'paragraph');
@@ -224,6 +129,35 @@ function addList(targetNode, newType) {
     
     (newElement.querySelector('[contenteditable]') || newElement).innerText = textAfterCaret;
     return newElement;
+}
+
+function handleBackspace(e) {
+    const selection = window.getSelection();
+    const caretPos = caretPosition(e.target, 'get');
+    const textContent = e.target.textContent;
+
+    if (selection.rangeCount > 0 && !selection.isCollapsed) {
+        e.preventDefault();
+        const range = selection.getRangeAt(0);
+        const startOffset = range.startOffset;
+        const endOffset = range.endOffset;
+        const newText = textContent.slice(0, startOffset) + textContent.slice(endOffset);
+        e.target.textContent = newText;
+        caretPosition(e.target, 'set', startOffset);
+    } else {
+        if (textContent.length === 1 && caretPos === 1) {
+            e.preventDefault();
+            e.target.innerHTML = '';
+        } else if (caretPos === 0 && !e.target.classList.contains('title-page')) {
+            e.preventDefault();
+            if (e.target.tagName !== 'P' && getCommandDetail(e.target.getAttribute('data-name')) !== 'List') {
+                addItems(e.target, 'paragraph');
+                handleRemovingNode('Empty', e.target);
+                return;
+            }
+            handleRemovingNode(null, e.target);
+        } 
+    }
 }
 
 function handleRemovingNode(action, target, newType) {
@@ -266,6 +200,50 @@ function handleRemovingNode(action, target, newType) {
         return newElement;
     }
 }
+
+function indent(target, action = 'increase', applied) {
+    if (target.classList.contains('unmodifiable')) return;
+    let targetNode = target.closest('#note-container > *');
+
+    if (applied instanceof HTMLElement) {
+        const currentIndent = parseInt(targetNode.getAttribute('data-indent') || '0', 10);
+        if (currentIndent === 0) applied.removeAttribute('data-indent');
+        else applied.setAttribute('data-indent', currentIndent.toString());
+        return;
+    }
+
+    const currentIndent = parseInt(targetNode.getAttribute('data-indent') || '0', 10);
+    const maxAllowedIndent = parseInt(targetNode.previousElementSibling?.getAttribute('data-indent') || '0', 10) + 1;
+
+    const adjustSiblingsIndent = (delta) => {
+        let sibling = targetNode.nextElementSibling;
+        while (sibling) {
+            const siblingIndent = parseInt(sibling.getAttribute('data-indent') || '0', 10);
+            if (siblingIndent === currentIndent) break; // Stop when encountering the same indent level
+            if (siblingIndent >= currentIndent) {
+                const newIndent = siblingIndent + delta;
+                if (newIndent <= 0) sibling.removeAttribute('data-indent');
+                else sibling.setAttribute('data-indent', newIndent.toString());
+            }
+            sibling = sibling.nextElementSibling;
+        }
+    };
+
+    if (action === 'decrease') {
+        if (currentIndent > 0) {
+            const newIndent = currentIndent - 1;
+            if (newIndent === 0) targetNode.removeAttribute('data-indent');
+            else targetNode.setAttribute('data-indent', newIndent.toString());
+            adjustSiblingsIndent(-1);
+        }
+    } else if (action === 'increase') {
+        if (currentIndent < maxAllowedIndent && currentIndent < 4) {
+            const newIndent = currentIndent + 1;
+            targetNode.setAttribute('data-indent', newIndent.toString());
+        }
+    }
+}
+
 
 
 function splitList(targetNode) {
@@ -321,7 +299,7 @@ function findSibling(node, adjacent) {
 
 function caretPosition(element, action = 'get', position = 0) {
     const selection = window.getSelection();
-    if (!selection.rangeCount) return 0; // Ensure a selection exists.
+    if (!selection.rangeCount) return 0;
     const range = selection.getRangeAt(0);
 
     if (action === 'get') {
@@ -333,7 +311,7 @@ function caretPosition(element, action = 'get', position = 0) {
         let textNode = element.firstChild;
 
         if (!textNode) {
-            element.textContent = ''; // Ensure there is a text node
+            element.textContent = '';
             textNode = element.firstChild;
         }
 
@@ -418,7 +396,6 @@ async function populateCommandPalette() {
 
 function resetCommandPalette(target) {
     const sections = commandPalette.querySelectorAll('.command-section');
-    target?.classList.remove('selected');
     commandInput.value = '';
     sections.forEach(section => {
         section.style.display = '';
@@ -526,10 +503,10 @@ noteContainer.addEventListener('focusin', (e) => {
     targetNode = newTargetNode;
     if (targetNode) {
         targetNode.setAttribute('data-target', 'true');
+        caretPosition(targetNode, 'set', 'end') 
     }
 });
 
-const saveButton = document.getElementById('save-button');
 
 // Load saved notes when the page loads
 document.addEventListener('DOMContentLoaded', () => {
@@ -539,14 +516,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Save notes to localStorage when the button is clicked
-saveButton.addEventListener('click', () => {
-    const content = noteContainer.innerHTML;
-    localStorage.setItem('noteContent', content);
-    alert('Notes saved!');
-});
 
 // Optionally, save automatically when content changes
 noteContainer.addEventListener('input', () => {
     localStorage.setItem('noteContent', noteContainer.innerHTML);
 });
+
+function sPlaceholder() {
+    let currentColor = getComputedStyle(document.documentElement).getPropertyValue('--placeholder-color').trim(); 
+
+    if (currentColor === 'transparent') { 
+        document.documentElement.style.setProperty('--placeholder-color', 'hsl(225, 15%, 50%)'); 
+    } else {
+        document.documentElement.style.setProperty('--placeholder-color', 'transparent')
+    }
+}

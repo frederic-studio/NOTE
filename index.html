@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <title>Note Editor</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="prism.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <meta name="description" content="A simple note editor">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 </head>
 <body>
-    <button id="save-button">Save Notes</button>
-    <div id="note-container" spellcheck="false" data-width="60">
+    <main id="note-container" spellcheck="false" data-width="60">
         <h1 data-placeholder="Page title" data-name="display" contenteditable="true" class="unmodifiable"></h1>
+    </main>
+    <div class="setting">
+        <h4>Setting</h4>
+        <button onclick="sPlaceholder()">placeholder</button>
+        <button onclick="sGrayedText()">grayed text</button>
+        <button onclick="sDeleteContent()">delete content</button>
     </div>
-
     <div id="command-container" popover> 
         <div id="command-search">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -61,6 +63,5 @@
     </template>
 
     <script src="script.js"></script>
-    <script src="prism.js"></script>
 </body>
 </html>

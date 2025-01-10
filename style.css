@@ -16,6 +16,7 @@ input, button {background: none; border: none;}
         --border-color:          hsl(225, 15%, 90%);
         --accent-color:          hsl(225, 15%, 50%);
         --text-color:            hsl(225, 15%, 10%);
+        --placeholder-color:     hsl(225, 15%, 50%);
         scrollbar-color: var(--accent-color) var(--body-background-color);
         --indent: 1rem;
 }
@@ -27,10 +28,13 @@ input, button {background: none; border: none;}
         --border-color:          hsl(225, 15%, 15%);
         --accent-color:          hsl(225, 15%, 50%);
         --text-color:            hsl(225, 15%, 100%);
+        --placeholder-color:     hsl(225, 15%, 50%);
         scrollbar-color: var(--accent-color) var(--body-background-color);
         --indent: 1rem;
     }
 }
+
+
 
 body {
     font-family: "Inter", sans-serif;
@@ -41,16 +45,6 @@ body {
     overflow-x: hidden;
 }
 
-button#save-button {
-    border: 1px solid var(--border-color);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-}
-
-*::placeholder {color: var(--accent-color);}
 svg path {fill: var(--accent-color);}
 
 #note-container {
@@ -60,87 +54,41 @@ svg path {fill: var(--accent-color);}
     margin: auto;
     margin-bottom: 100vh;
     overflow: hidden;
-    > *:not(ul, ol) {padding: 0.5rem 0; background-color: var(--body-background-color);}
 }
 
 [contenteditable] {
     width: 100%;
     outline: none;
 }
-[data-target="true"] {
-    anchor-name: --note-container;
-}
+
+
+
+/* Placeholder */
 
 p[data-target="true"]:empty::after {
-    content: attr(data-placeholder) " or press '/' to add a new component" !important;
-    vertical-align: text-bottom !important;
-    color: var(--accent-color) !important;
-    display: inline-flex !important;
-    font-style: italic !important;
+    content: attr(data-placeholder) " or press  to add a new component";
+    vertical-align: text-bottom ;
+    color: var(--placeholder-color) ;
+    display: inline-flex ;
+    font-style: italic ;
 }
 
-
-
-#note-container > *:has(:focus-within) {
-    outline: none;
-    transition: all 0.2s ease-in-out;
-}
 #note-container  *[contenteditable]:empty:not(p)::after {
     content: attr(data-placeholder);
-    color: var(--accent-color);
+    color: var(--placeholder-color);
     display: inline;
     font-style: italic;
 }
 
-#note-container p[contenteditable]:empty:focus:after {
-    content: attr(data-placeholder) " or press '/' to add a new component";
-    vertical-align: text-bottom;
-    color: var(--accent-color);
-    display: inline-flex;
-    font-style: italic;
+*::placeholder {color: var(--placeholder-color);}
+
+
+
+/* Command palette */
+
+[data-target="true"] {
+    anchor-name: --note-container;
 }
-
-#note-container [data-indent] {
-
-    &::before {
-        content: '';
-        width: 1px;
-        transform: translateX(calc(calc(var(--indent)) * -1));
-        top: 0;
-        bottom: -100%;
-        background-color: var(--accent-color);
-        position: absolute;
-        z-index: -1;
-    }
-}
-
-#note-container [data-indent="1"] {
-    margin-left: var(--indent);
-}
-
-#note-container [data-indent="2"] {
-    margin-left: calc(var(--indent) * 2);
-}
-
-#note-container [data-indent="3"] {
-    margin-left: calc(var(--indent) * 3);
-}
-
-#note-container [data-indent="4"] {
-    margin-left: calc(var(--indent) * 4);
-}
-
-ol, ul {
-    &::before {
-        transform: translateX(calc(var(--indent) * -2.5)) !important;
-    }
-}
-
-
-
-
-
-
 
 #command-container {
     transition-behavior: allow-discrete;
@@ -271,6 +219,27 @@ ol, ul {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Styled text */
+
 form[data-name="checklist"] {
      
     div {
@@ -309,21 +278,6 @@ form[data-name="checklist"] {
     }
  }
 
- .selected {
-    background-color: #395cc622;
-    outline: #395cc655 solid 1px;
-    transition: all 0.2s ease-in-out;
-    border-radius: 0.25rem;
- }
-
-details {
-    border: 1px solid red;
-    :not(summary) {
-        padding-left: 2rem;
-    }
-}
-
-
 h1 {
     font-size: 2.5rem;
     padding-bottom: 0.5rem;
@@ -339,4 +293,93 @@ h2 {
 h3 {
     font-size: 1.5rem;
     padding-bottom: 0.5rem;
+}
+
+
+
+
+
+/* Indent */
+#note-container [data-indent] {
+    &::before {
+        content: '';
+        width: 1px;
+        transform: translateX(calc(calc(var(--indent)) * -1));
+        top: 0;
+        bottom: -100%;
+        background-color: var(--accent-color);
+        position: absolute;
+        z-index: -1;
+    }
+}
+
+#note-container > * {
+    background-color: var(--body-background-color);
+    padding-block: 0.5rem;
+}
+
+#note-container [data-indent="1"] {
+    margin-left: var(--indent);
+}
+
+#note-container [data-indent="2"] {
+    margin-left: calc(var(--indent) * 2);
+}
+
+#note-container [data-indent="3"] {
+    margin-left: calc(var(--indent) * 3);
+}
+
+#note-container [data-indent="4"] {
+    margin-left: calc(var(--indent) * 4);
+}
+
+#note-container ol {
+    padding-inline-start: 0;
+    list-style: none;
+    counter-reset: ol;
+    
+    li {
+        counter-increment: ol;
+        background-color: var(--body-background-color);
+        padding-left: 2rem;
+        position: relative;
+        &::before {
+            content: counter(ol, decimal-leading-zero) ".";
+            left: 0;
+            position: absolute;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+}
+
+#note-container ul {
+    padding-inline-start: 0;
+    list-style: none;
+    li {
+        background-color: var(--body-background-color);
+        padding-left: 1.5rem;
+        position: relative;
+        &::before {
+            content: '';
+            left: 0;
+            position: absolute;
+        }
+    }
+}
+
+.setting {
+    background-color: var(--card-background-color);
+    position: fixed;
+    bottom: 0.5rem;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    
+    button {
+        display: block;
+        width: 100%;
+        background-color: var(--accent-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.25rem;
+    }
 }
