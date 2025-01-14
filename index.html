@@ -10,58 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 </head>
 <body>
-    <main id="note-container" spellcheck="false" data-width="60">
-        <h1 data-placeholder="Page title" data-name="display" contenteditable="true" class="unmodifiable"></h1>
+    <main id="note-container" spellcheck="false" contenteditable="true">
+        <h1 class="unmodifiable">Titre</h1>
     </main>
-    <div class="setting">
-        <h4>Setting</h4>
-        <button onclick="sPlaceholder()">placeholder</button>
-        <button onclick="sDeleteContent()">delete content</button>
-        <label>Fontsize<input type="range" min="0.75" max="2.25" value="1" step="0.25" id="sFontsize"></label>
-    </div>
-    <div id="command-container" popover> 
-        <div id="command-search">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5.9175 11.835C4.26363 11.835 2.86392 11.2622 1.71835 10.1166C0.572783 8.97108 0 7.57136 0 5.9175C0 4.26363 0.572783 2.86392 1.71835 1.71835C2.86392 0.572783 4.26363 0 5.9175 0C7.57136 0 8.97108 0.572783 10.1166 1.71835C11.2622 2.86392 11.835 4.26363 11.835 5.9175C11.835 6.58511 11.7288 7.21479 11.5164 7.80654C11.3039 8.39829 11.0156 8.92176 10.6515 9.37696L15.7496 14.4751C15.9165 14.642 16 14.8544 16 15.1124C16 15.3703 15.9165 15.5827 15.7496 15.7496C15.5827 15.9165 15.3703 16 15.1124 16C14.8544 16 14.642 15.9165 14.4751 15.7496L9.37696 10.6515C8.92176 11.0156 8.39829 11.3039 7.80654 11.5164C7.21479 11.7288 6.58511 11.835 5.9175 11.835ZM5.9175 10.0142C7.05548 10.0142 8.02276 9.61593 8.81935 8.81935C9.61593 8.02276 10.0142 7.05548 10.0142 5.9175C10.0142 4.77952 9.61593 3.81223 8.81935 3.01565C8.02276 2.21906 7.05548 1.82077 5.9175 1.82077C4.77952 1.82077 3.81223 2.21906 3.01565 3.01565C2.21906 3.81223 1.82077 4.77952 1.82077 5.9175C1.82077 7.05548 2.21906 8.02276 3.01565 8.81935C3.81223 9.61593 4.77952 10.0142 5.9175 10.0142Z" fill="#595959"/>
-            </svg> 
-            <input type="text" tabindex="-1" autocomplete="off" spellcheck="false" placeholder="Search component to add..." id="command-input">
-            <button popovertarget="command-container">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.99999 11.4L5.09999 16.3C4.91665 16.4834 4.68332 16.575 4.39999 16.575C4.11665 16.575 3.88332 16.4834 3.69999 16.3C3.51665 16.1167 3.42499 15.8834 3.42499 15.6C3.42499 15.3167 3.51665 15.0834 3.69999 14.9L8.59999 10L3.69999 5.10005C3.51665 4.91672 3.42499 4.68338 3.42499 4.40005C3.42499 4.11672 3.51665 3.88338 3.69999 3.70005C3.88332 3.51672 4.11665 3.42505 4.39999 3.42505C4.68332 3.42505 4.91665 3.51672 5.09999 3.70005L9.99999 8.60005L14.9 3.70005C15.0833 3.51672 15.3167 3.42505 15.6 3.42505C15.8833 3.42505 16.1167 3.51672 16.3 3.70005C16.4833 3.88338 16.575 4.11672 16.575 4.40005C16.575 4.68338 16.4833 4.91672 16.3 5.10005L11.4 10L16.3 14.9C16.4833 15.0834 16.575 15.3167 16.575 15.6C16.575 15.8834 16.4833 16.1167 16.3 16.3C16.1167 16.4834 15.8833 16.575 15.6 16.575C15.3167 16.575 15.0833 16.4834 14.9 16.3L9.99999 11.4Z" fill="#5F6368"/>
-                </svg>
-            </button>               
-        </div> 
-        <div id="command-palette"></div>
-    </div>
 
-    <template id="template-ordered">
-        <ol data-name="ordered">
-            <li data-placeholder="Type to add an item" data-name="ordered" contenteditable="true"></li>
-        </ol>
-    </template>
-
-    <template id="template-unordered">
-        <ul data-name="unordered">
-            <li data-placeholder="Type to add an item" data-name="unordered" contenteditable="true"></li>
-        </ul>
-    </template>
-
-    <template id="template-checklist">
-        <form data-name="checklist">
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m400-416 236-236q11-11 28-11t28 11q11 11 11 28t-11 28L428-332q-12 12-28 12t-28-12L268-436q-11-11-11-28t11-28q11-11 28-11t28 11l76 76Z"/></svg>
-                <input type="checkbox" name="checklist" tabindex="-1">
-                <label data-placeholder="Type to add a checklist item" data-name="checklist" contenteditable="true" for="checklist"></label>
-            </div>
-        </form>
-    </template>
-
-    <template id="template-code">
-        <code class="code-sample" data-name="code">
-            <pre class="language-javascript code" contenteditable="true" data-modifier="false" data-name="code" data-placeholder="Type to add code"></pre>
-          </code>
-    </template>
-    <script src="save.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
