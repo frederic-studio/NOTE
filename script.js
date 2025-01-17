@@ -1,4 +1,7 @@
 const noteContainer = document.getElementById('note-container');
+let currentActiveNode = null; // Cache the active node
+let spacePressCount = 0; // Counter for space presses
+let spacePressTimeout;   // Timeout to reset the counter
 const markdownTags = {
     inline: {
         "**": "strong",       // Bold
@@ -17,13 +20,9 @@ const markdownTags = {
         "####": "h4",         // Heading 4
         "#####": "h5",        // Heading 5
         "######": "h6",       // Heading 6
-        "-": "li",            // Unordered list item
-        "*": "li",            // Unordered list item
-        "1.": "li",           // Ordered list item
         ">": "blockquote",    // Blockquote
         "```": "pre",         // Code block
         "---": "hr",          // Horizontal rule
-        "\n\n": "p",          // Paragraph
     },
     list: {
         "-": "ul",            // Unordered list
@@ -33,26 +32,81 @@ const markdownTags = {
     }
 };
 
-noteContainer.addEventListener('keyup', () => active());
-noteContainer.addEventListener('click', () => active());
-
 noteContainer.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') convertMdToHTML(e);
-    if (e.code === 'Enter') addBlock(e);
-    if (e.code === 'Backspace') handleBackspace(e);
+    let target = findNode();
+    if (e.code === 'Space') convertMdToHTML(e, target);
+    if (e.code === 'Enter') addBlock(e, target);
+    if (e.code === 'Backspace') handleBackspace(e, target);
+    if (e.code === 'Semicolon') addInline(e, target);
 });
 
 function active() {
-    let target = findNode().closest('#note-container > *') || noteContainer.querySelector('.active');
-    noteContainer.querySelectorAll('.active').forEach(node => node.classList.remove('active'));
-    target.classList?.add('active');
+    newActiveNode = findNode() || noteContainer.querySelector('.active');
+
+    if (newActiveNode !== currentActiveNode) {
+        if (currentActiveNode) currentActiveNode.classList.remove('active');
+        newActiveNode.classList.add('active');
+        currentActiveNode = newActiveNode;
+    }
 }
 
-function convertMdToHTML(e) {
-    let target = findNode().classList.contains('md-block') ? findNode().parentNode : findNode();
-    let textBefore = findNode().textContent.slice(0, caretPosition(findNode(), 'get')).trim();
+['keyup', 'click', 'blur'].forEach(event => {
+    noteContainer.addEventListener(event, () => active());
+});
+
+function handleDoubleSpace(e, targetNode) {
+    if (!targetNode.closest('.md-inline')) return;
+    spacePressCount++;
+    clearTimeout(spacePressTimeout);
+    spacePressTimeout = setTimeout(() => {
+        spacePressCount = 0;
+    }, 300);
+
+    if (spacePressCount === 2) {
+        spacePressCount = 0; // Reset the counter
+        num = targetNode.textContent.length;
+        targetNode.textContent = targetNode.textContent.slice(0, num - 1);
+        caretPosition(targetNode.closest('#note-container > *'), 'set', 'end');
+    }
+}
+
+function addInline(e, targetNode) {
+    if (targetNode.classList.contains('md-block')) return;
+
+    let caretPos = caretPosition(targetNode, 'get');
+    let textBefore = targetNode.textContent.slice(0, caretPos).trim();
+    let lastWord = textBefore.split(' ').pop();
+
+    // Remove the last word from the content
+    let updatedText = textBefore.slice(0, -lastWord.length).trim(); // Remove the last word
+    let remainingText = targetNode.textContent.slice(caretPos); // Keep the text after caret
+
+    e.preventDefault();
+
+    // Update the target node with the new structure
+    targetNode.innerHTML = `${updatedText} <span class="md-inline">${lastWord}:<${lastWord}>\u200B</${lastWord}>;</span>${remainingText}`;
+    
+    // Move the caret inside the newly added code element
+    let code = targetNode.querySelector(`${lastWord}`);
+    caretPosition(code, 'set', 1);
+}
+
+
+function convertMdToHTML(e, targetNode) {
+    handleDoubleSpace(e, targetNode);
+    let target = targetNode.classList.contains('md-block') ? targetNode.parentNode : targetNode;
+    let textBefore = targetNode.textContent.slice(0, caretPosition(targetNode, 'get')).trim();
     textBefore = textBefore.replace('\u200B', '');  // Zero-width space
     let textAfter = target.textContent.replace(textBefore, '').trim();
+
+    if (targetNode.parentNode.classList.contains('md-inline')) {
+        let space;
+        if (space === 1) {
+            caretPosition(targetNode.closest('#note-container > *'), 'set', 'end');
+            space = 0;
+            console.log('space 1')
+        } else {space = 1; console.log(space)};
+    }
 
     if (markdownTags["block"][textBefore]) {
         e.preventDefault();
@@ -64,7 +118,7 @@ function convertMdToHTML(e) {
 
         MDBlock.classList.add('md-block');
         MDBlock.textContent = textBefore;
-        element.textContent = textAfter.startsWith(' ') ? textAfter : ' ' + textAfter;  // Zero-width space
+        element.textContent = textAfter.startsWith('\u200B') ? textAfter : '\u200B' + textAfter;  // Zero-width space
 
         fragment.appendChild(element);
         target.replaceWith(fragment);
@@ -75,28 +129,28 @@ function convertMdToHTML(e) {
 }
 
 
-function addBlock(e) {
-    if (findNode().classList.contains('md-block')) return e.preventDefault();
-    const paragraph = document.createElement('p');
-    findNode().insertAdjacentElement('afterend', paragraph);
-    paragraph.textContent = '\u200B';  // Zero-width space
-    caretPosition(paragraph, 'set', 1);
-    e.preventDefault();
-    active();
-}
-
-function handleBackspace(e) {
-    if (findNode().classList.contains('md-block')) return removeSyntax(e);
-    if (findNode() === noteContainer.firstElementChild && !findNode().textContent) return  e.preventDefault();;
-}
-
-function removeSyntax(e) {
-    let target = findNode().parentNode;
-
-    if (findNode().textContent.length === 1) {
+function addBlock(e, target) {
+    if (target.classList.contains('md-block')) {
         e.preventDefault();
-        caretPosition(target, 'set', '1');
-        target.firstChild.remove();
+        return;
+    }
+
+    const paragraph = document.createElement('p');
+    paragraph.textContent = '\u200B'; // Start with zero-width space
+    target.insertAdjacentElement('afterend', paragraph);
+
+    caretPosition(paragraph, 'set', 'start');
+    e.preventDefault();
+}
+
+function handleBackspace(e, target) {
+    if (target.classList.contains('md-block')) {
+        e.preventDefault();
+        const parent = target.parentNode;
+        target.remove();
+        caretPosition(parent, 'set', 1);
+    } else if (target === noteContainer.firstElementChild && !target.textContent.trim()) {
+        e.preventDefault();
     }
 }
 

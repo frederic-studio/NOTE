@@ -55,7 +55,13 @@ body {
 #note-container > * {
     padding: 0.25em;
     height: fit-content;
+    min-height: 2rem;
 }
+
+#note-container:focus {
+    outline: none;
+}
+
 *:not(.active) > .md-block {
     display: none;
 }
@@ -63,13 +69,61 @@ body {
 .md-block {
     display: inline-block;
     color: var(--accent-color);
+    margin-right: 0.5rem;
     background-color: var(--card-background-color);
-    padding: 0em 0.25em;
-    border-radius: 0.25em;
 }
 
 blockquote {
     padding-left: 1.5rem;
     border-left: 1px solid var(--accent-color);
     background-color: var(--card-background-color);
+}
+
+hr {
+    border: none;
+    position: relative;
+
+    &::after {
+        position: absolute;
+        width: 100%;
+        height: 1px;
+        background-color: var(--border-color);
+        content: '';
+        top: 50%;
+    }
+}
+
+hr.active::after {height: 0px;}
+
+
+pre {
+    width: 100%;
+    background-color: var(--card-background-color);
+}
+
+span.md-inline {
+    font-family: monospace;
+    background-color: var(--card-background-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.25em !important;
+    padding: 0.25em !important;
+    font-size: 0 !important;
+    > *{
+        font-size: 1rem !important;
+        background-color: var(--card-background-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 0.25em !important;
+        padding: 0.25em !important;
+    }
+}
+
+span.md-inline.active, span.md-inline:has(.active) {
+    font-size: 1rem !important;
+    .active {
+        padding: 0rem !important;
+        background: none !important;
+        border: none !important;
+        border-radius: 0em !important;
+        padding: 0em !important;
+    }
 }
