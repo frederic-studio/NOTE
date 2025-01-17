@@ -24,43 +24,92 @@ const markdownTags = {
         "```": "pre",         // Code block
         "---": "hr",          // Horizontal rule
         "\n\n": "p",          // Paragraph
+    },
+    list: {
+        "-": "ul",            // Unordered list
+        "*": "ul",            // Unordered list
+        "1.": "ol",           // Ordered list
+        "-[]": "task",          // Task list
     }
 };
 
+noteContainer.addEventListener('keyup', () => active());
+noteContainer.addEventListener('click', () => active());
+
 noteContainer.addEventListener('keydown', (e) => {
     if (e.code === 'Space') convertMdToHTML(e);
+    if (e.code === 'Enter') addBlock(e);
+    if (e.code === 'Backspace') handleBackspace(e);
 });
 
+function active() {
+    let target = findNode().closest('#note-container > *') || noteContainer.querySelector('.active');
+    noteContainer.querySelectorAll('.active').forEach(node => node.classList.remove('active'));
+    target.classList?.add('active');
+}
+
 function convertMdToHTML(e) {
-    const target = findNode();
-    if (!target) return;
-    let text = target.textContent.trim();
-    if (markdownTags["block"][text]) {
+    let target = findNode().classList.contains('md-block') ? findNode().parentNode : findNode();
+    let textBefore = findNode().textContent.slice(0, caretPosition(findNode(), 'get')).trim();
+    textBefore = textBefore.replace('\u200B', '');  // Zero-width space
+    let textAfter = target.textContent.replace(textBefore, '').trim();
+
+    if (markdownTags["block"][textBefore]) {
         e.preventDefault();
-        const tag = markdownTags["block"][text];
+        const tag = markdownTags["block"][textBefore];
+
+        const fragment = document.createDocumentFragment();
         const element = document.createElement(tag);
-        const span = document.createElement('span');
-        span.textContent = text;
+        const MDBlock = document.createElement('span');
 
-        target.replaceWith(element);
-        element.appendChild(span);
+        MDBlock.classList.add('md-block');
+        MDBlock.textContent = textBefore;
+        element.textContent = textAfter.startsWith(' ') ? textAfter : ' ' + textAfter;  // Zero-width space
 
-        // Add a zero-width space to ensure the caret is placeable
-        const zeroWidthSpace = document.createTextNode('\u200B');
-        element.appendChild(zeroWidthSpace);
+        fragment.appendChild(element);
+        target.replaceWith(fragment);
 
-        // Set caret position after the zero-width space
-        caretPosition(element, 'set', 'end');
+        caretPosition(element, 'set', 1);
+        element.insertBefore(MDBlock, element.firstChild);
     }
 }
 
 
+function addBlock(e) {
+    if (findNode().classList.contains('md-block')) return e.preventDefault();
+    const paragraph = document.createElement('p');
+    findNode().insertAdjacentElement('afterend', paragraph);
+    paragraph.textContent = '\u200B';  // Zero-width space
+    caretPosition(paragraph, 'set', 1);
+    e.preventDefault();
+    active();
+}
+
+function handleBackspace(e) {
+    if (findNode().classList.contains('md-block')) return removeSyntax(e);
+    if (findNode() === noteContainer.firstElementChild && !findNode().textContent) return  e.preventDefault();;
+}
+
+function removeSyntax(e) {
+    let target = findNode().parentNode;
+
+    if (findNode().textContent.length === 1) {
+        e.preventDefault();
+        caretPosition(target, 'set', '1');
+        target.firstChild.remove();
+    }
+}
+
 function findNode() {
     const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return noteContainer.lastElementChild;
     const node = selection.anchorNode;
-    if (!selection || selection.rangeCount === 0) return null;
-    return node && node.nodeType === 3 ? node.parentNode : null;
+    
+    if (node && node.nodeType === Node.TEXT_NODE) return node.parentNode;
+    if (node) return node;
+    return noteContainer.lastElementChild;
 }
+
 
 function caretPosition(element, action = 'get', position = 0) {
     const selection = window.getSelection();
