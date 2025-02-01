@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ContentEditable Range/Selection Demo</title>
+  <style>
+    #editor {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 100px;
+    }
+    .toolbar button {
+      margin-right: 5px;
+    }
+
+    .block {
+      background-color: yellow;
+    }
+  </style>
+</head>
+<body>
+<div id="editor" contenteditable="true" spellcheck="false"><p>Start typing your Markdown content here...</p></div>
+<script src="range.js"></script>
+</body>
+</html>
