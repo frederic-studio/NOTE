@@ -5,11 +5,10 @@ document.addEventListener('selectionchange', () => selection = window.getSelecti
 
 editor.addEventListener('input', (e) => {
   heading();
+  console.log(e.inputType);
 });
 
-editor.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addBlock(e);
-});
+
 
 function addBlock(e) {
   e.preventDefault();
@@ -20,7 +19,6 @@ function addBlock(e) {
   if (node.classList.contains('block')) return;
   node.insertAdjacentElement('afterend', paragraph);
   paragraph.textContent = selection.anchorNode.textContent.slice(caretPosition).length > 0 ? selection.anchorNode.textContent.slice(caretPosition) : '\u200B';
-  node.textContent = node.textContent.slice(0, caretPosition);
   setCaretPosition(paragraph, 0);
 }
 
@@ -35,14 +33,17 @@ function heading() {
   if (!editor.contains(node)) return;
   
   if (!node.classList.contains('block')) {
+    console.log('1')
     surroundContentByIndices(0, caretPosition - 1, selection.anchorNode, 'span');
     wrapComplexNode(node, `H${text.length - 1}`);
   } else if (node.textContent.length > caretPosition) {
+    console.log('2')
     node.textContent = node.textContent.slice(0, caretPosition);
     wrapComplexNode(node.parentNode, `H${node.textContent.length - 1}`);
     setCaretPosition(node.nextSibling, 1, document.createTextNode(node.textContent.slice(caretPosition)));
     node.textContent = node.textContent.trim();
   } else{
+    console.log('3')
     wrapComplexNode(node.parentNode, `H${text.length - 1}`);
     setCaretPosition(node.nextSibling, 1);
     node.textContent = node.textContent.trim();
