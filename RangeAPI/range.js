@@ -1,136 +1,147 @@
+// Helper to schedule a DOM update via requestAnimationFrame
+function runDOMUpdate(callback) {
+  if (window.requestAnimationFrame) {
+    requestAnimationFrame(callback);
+  } else {
+    setTimeout(callback, 16); // fallback ~60fps
+  }
+}
+
+// Debounce helper to batch rapid events (e.g. on input)
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+// Enhanced setCaretPosition using requestAnimationFrame
+function setCaretPosition(node, method, position) {
+  runDOMUpdate(() => {
+    try {
+      if (!node) throw new Error("Node does not exist");
+      let range = document.createRange();
+      let sel = window.getSelection();
+      
+      // Ensure node is not empty
+      if (!node.textContent.trim()) {
+        node.textContent = "\u200b";
+      }
+      
+      if (['setStart', 'setEnd'].includes(method)) {
+        range[method](node, position);
+      } else {
+        range[method](node);
+      }
+      
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (error) {
+      console.error("Error setting caret position:", error);
+    }
+  });
+}
+
+// Enhanced getCaretPosition (read-only, so no scheduling needed)
+function getCaretPosition() {
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    if (range.collapsed) {
+      return { container: range.startContainer, offset: range.startOffset };
+    }
+    return {
+      startContainer: range.startContainer,
+      startOffset: range.startOffset,
+      endContainer: range.endContainer,
+      endOffset: range.endOffset,
+    };
+  }
+  return null;
+}
+
+// Enhanced wrap function with requestAnimationFrame
+function wrap(tag, element, start, end) {
+  runDOMUpdate(() => {
+    let range;
+    
+    // If element is a DOM node, wrap its contents
+    if (element && element.nodeType) {
+      if (!element.textContent.trim()) element.textContent = "\u200b";
+      range = document.createRange();
+      range.selectNodeContents(element);
+    }
+    // Else, if two numbers are provided, use them as start and end offsets in a container
+    else if (typeof start === "number" && typeof end === "number") {
+      
+      if (!element) return console.error("Editor container not found.");
+      if (!element.firstChild) element.textContent = "\u200b";
+
+      range = document.createRange();
+      // Note: In a production app you might need a more robust offset-to-node conversion.
+      range.setStart(element.firstChild, start);
+      range.setEnd(element.firstChild, end);
+    } else {
+      console.error("Invalid parameter for wrap. Provide a node or two numeric offsets.");
+      return;
+    }
+    
+    const wrapper = document.createElement(tag);
+    try {
+      range.surroundContents(wrapper);
+    } catch (error) {
+      console.error("Error during surroundContents, falling back to manual extraction:", error);
+      const content = range.extractContents();
+      wrapper.appendChild(content);
+      range.insertNode(wrapper);
+    }
+  });
+}
+
+// Enhanced unwrap function with requestAnimationFrame
+function unwrap(element, replacementTag) {
+  runDOMUpdate(() => {
+    if (!element || !element.parentNode) {
+      console.error("Element not found or has no parent.");
+      return;
+    }
+    
+    const parent = element.parentNode;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const contentFragment = range.extractContents();
+    
+    if (replacementTag) {
+      const newEl = document.createElement(replacementTag);
+      newEl.appendChild(contentFragment);
+      parent.replaceChild(newEl, element);
+    } else {
+      parent.replaceChild(contentFragment, element);
+    }
+  });
+}
+
+
+
+// Main logic for handling Markdown header syntax on keydown.
 const editor = document.getElementById('editor');
-let selection;
 
-document.addEventListener('selectionchange', () => selection = window.getSelection());
-
-editor.addEventListener('input', (e) => {
-  heading();
-  console.log(e.inputType);
+editor.addEventListener('keyup', (e) => {
+  if (e.key === '#' || e.key === ' ') heading()
 });
 
-
-
-function addBlock(e) {
-  e.preventDefault();
-  let caretPosition = selection.anchorOffset;
-  let node = selection.anchorNode.nodeType === Node.TEXT_NODE ? selection.anchorNode.parentNode : selection.anchorNode;
-  let paragraph = document.createElement('P');
-
-  if (node.classList.contains('block')) return;
-  node.insertAdjacentElement('afterend', paragraph);
-  paragraph.textContent = selection.anchorNode.textContent.slice(caretPosition).length > 0 ? selection.anchorNode.textContent.slice(caretPosition) : '\u200B';
-  setCaretPosition(paragraph, 0);
-}
-
 function heading() {
-  let caretPosition = selection.anchorOffset;
-  let text = selection.anchorNode.textContent.slice(0, caretPosition);
-  let node = selection.anchorNode.nodeType === Node.TEXT_NODE ? selection.anchorNode.parentNode : selection.anchorNode;
-  let previousNode = node?.previousSibling;
+  let text = getCaretPosition().container.textContent.slice(0, getCaretPosition().offset);
+  let regex = /^#{1,6}\s*$/;
+  console.log(text);
 
-  if (previousNode?.classList?.contains('block')) return;
-  if (!text.match(/^#{1,6}\s/)) return;
-  if (!editor.contains(node)) return;
-  
-  if (!node.classList.contains('block')) {
-    console.log('1')
-    surroundContentByIndices(0, caretPosition - 1, selection.anchorNode, 'span');
-    wrapComplexNode(node, `H${text.length - 1}`);
-  } else if (node.textContent.length > caretPosition) {
-    console.log('2')
-    node.textContent = node.textContent.slice(0, caretPosition);
-    wrapComplexNode(node.parentNode, `H${node.textContent.length - 1}`);
-    setCaretPosition(node.nextSibling, 1, document.createTextNode(node.textContent.slice(caretPosition)));
-    node.textContent = node.textContent.trim();
-  } else{
-    console.log('3')
-    wrapComplexNode(node.parentNode, `H${text.length - 1}`);
-    setCaretPosition(node.nextSibling, 1);
-    node.textContent = node.textContent.trim();
-  }
-}
+  if (text.match(regex)) {
+    let level = text.match(/#/g).length;
+    if (getCaretPosition().container.parentNode?.classList.contains('md-syntax')) {}
+    let cool = wrap(`span`, getCaretPosition().container, 0, getCaretPosition().offset);
+    console.log(cool);
 
-// Function to surround content using start and end indices
-function surroundContentByIndices(start, end, node, wrapper) {
-  const range = document.createRange();
-  range.setStart(node, start);
-  range.setEnd(node, end);
-  let tag = document.createElement(wrapper)
-  if (wrapper === 'span') tag.classList.add('block');
-  try {
-    range.surroundContents(tag);
-    range.setStart(tag.nextSibling, 1);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  } catch (err) {
-    console.error('Error surrounding content:', err);
-    alert('Please make a valid selection within a single text node.');
-  }
-}
-
-
-function wrapComplexNode(node, wrapperTag) {
-  const selection = window.getSelection();
-  const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-  let caretOffset = null;
-  if (range && node.contains(range.startContainer)) caretOffset = getCaretCharacterOffsetWithin(node);
-  
-  const wrapper = document.createElement(wrapperTag);
-  while (node.firstChild) wrapper.appendChild(node.firstChild);
-  node.replaceWith(wrapper);
-  
-  if (caretOffset !== null) setCaretPosition(wrapper, caretOffset);
-}
-
-function getCaretCharacterOffsetWithin(element) {
-  const selection = window.getSelection();
-  let caretOffset = 0;
-
-  if (selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0);
-    const preCaretRange = range.cloneRange();
-    preCaretRange.selectNodeContents(element);
-    preCaretRange.setEnd(range.startContainer, range.startOffset);
-    caretOffset = preCaretRange.toString().length;
-  }
-  return caretOffset;
-}
-
-// Helper function to set caret position within an element at a specific character offset
-function setCaretPosition(element, offset, insertNode) {
-  const range = document.createRange();
-  const selection = window.getSelection();
-
-  let charIndex = 0;
-  const nodeStack = [element];
-  let node, found = false;
-
-  while (!found && (node = nodeStack.pop())) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const nextCharIndex = charIndex + node.length;
-      if (offset >= charIndex && offset <= nextCharIndex) {
-        range.setStart(node, offset - charIndex);
-        range.collapse(true);
-        found = true;
-      }
-      charIndex = nextCharIndex;
-    } else {
-      let i = node.childNodes.length;
-      while (i--) {
-        nodeStack.push(node.childNodes[i]);
-      }
-    }
-  }
-  
-  if (found) {
-    selection.removeAllRanges();
-    selection.addRange(range);
-  } else {
-    // Place caret at the end if the position wasn't found
-    range.selectNodeContents(element);
-    range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    unwrap(getCaretPosition().container.parentNode, `h${level}`);
   }
 }
