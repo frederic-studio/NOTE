@@ -1,25 +1,54 @@
-// Helper to schedule a DOM update via requestAnimationFrame
-function runDOMUpdate(callback) {
-  if (window.requestAnimationFrame) {
-    requestAnimationFrame(callback);
-  } else {
-    setTimeout(callback, 16); // fallback ~60fps
+const editor = document.getElementById("editor");
+
+editor.addEventListener("input", (e) => {
+  const target = window.getSelection().focusNode;
+  const range = document.createRange();
+
+
+  if (target.parentNode.tagName === 'SPAN' && target.textContent.length > 1 && getCaretPosition().offset === target.textContent.length) {
+    range.setStart(target, target.length - 1); // From the start
+    range.setEnd(target, target.length); // To the second character
+    const extractedContent = range.extractContents();
+    if (!target.nextSibling) {
+        target.parentNode.after(extractedContent);
+        setCaretPosition(target.parentNode.nextSibling, 'setStart', 1);
+    } else {
+        target.nextSibling.childNodes[0].before(extractedContent);
+        setCaretPosition(target.nextSibling.childNodes[0], 'setStart', 1);
+    }
   }
-}
+});
 
-// Debounce helper to batch rapid events (e.g. on input)
-function debounce(func, wait) {
-  let timeout;
-  return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
+editor.addEventListener("keydown", (e) => {
+  const target = window.getSelection().focusNode;
+  const range = document.createRange();
+
+  if (target.parentNode.closest('span') && target.parentNode.tagName !== 'SPAN' && target.textContent.length === 1 && e.key === 'Backspace' && !target.textContent.startsWith('\u200b')) {
+    e.preventDefault();
+    target.textContent = '\u200b';
+    setCaretPosition(target, 'setStart', 1);
   };
+
+});
+
+document.addEventListener("selectionchange", (e) => active(window.getSelection().focusNode));
+
+function active(target) {
+  console.log(target, target.parentNode);
+  document.querySelectorAll(".active").forEach((el) => el.classList.remove("active"));
+  target.parentNode.classList.add("active");
 }
 
-// Enhanced setCaretPosition using requestAnimationFrame
+editor.addEventListener("keyup", (e) => {
+  const target = window.getSelection().focusNode;
+  const range = document.createRange();
+  console.log(target.textContent.startsWith('\u200b'))
+  console.log(target)
+  console.log(getCaretPosition())
+
+});
+
 function setCaretPosition(node, method, position) {
-  runDOMUpdate(() => {
-    try {
       if (!node) throw new Error("Node does not exist");
       let range = document.createRange();
       let sel = window.getSelection();
@@ -34,13 +63,9 @@ function setCaretPosition(node, method, position) {
       } else {
         range[method](node);
       }
-      
+
       sel.removeAllRanges();
       sel.addRange(range);
-    } catch (error) {
-      console.error("Error setting caret position:", error);
-    }
-  });
 }
 
 // Enhanced getCaretPosition (read-only, so no scheduling needed)
@@ -61,87 +86,16 @@ function getCaretPosition() {
   return null;
 }
 
-// Enhanced wrap function with requestAnimationFrame
-function wrap(tag, element, start, end) {
-  runDOMUpdate(() => {
-    let range;
-    
-    // If element is a DOM node, wrap its contents
-    if (element && element.nodeType) {
-      if (!element.textContent.trim()) element.textContent = "\u200b";
-      range = document.createRange();
-      range.selectNodeContents(element);
+function inlineGestion(target) {
+  const selection = window.getSelection();
+  const range = selection.getRangeAt(0);
+  if (target.parentNode.tagName === 'SPAN') {
+    console.log('is span')
+    if (!target.nextSibling) {
+      const range = document.createRange();
+      range.setStart(target, 0);
     }
-    // Else, if two numbers are provided, use them as start and end offsets in a container
-    else if (typeof start === "number" && typeof end === "number") {
-      
-      if (!element) return console.error("Editor container not found.");
-      if (!element.firstChild) element.textContent = "\u200b";
-
-      range = document.createRange();
-      // Note: In a production app you might need a more robust offset-to-node conversion.
-      range.setStart(element.firstChild, start);
-      range.setEnd(element.firstChild, end);
-    } else {
-      console.error("Invalid parameter for wrap. Provide a node or two numeric offsets.");
-      return;
-    }
-    
-    const wrapper = document.createElement(tag);
-    try {
-      range.surroundContents(wrapper);
-    } catch (error) {
-      console.error("Error during surroundContents, falling back to manual extraction:", error);
-      const content = range.extractContents();
-      wrapper.appendChild(content);
-      range.insertNode(wrapper);
-    }
-  });
-}
-
-// Enhanced unwrap function with requestAnimationFrame
-function unwrap(element, replacementTag) {
-  runDOMUpdate(() => {
-    if (!element || !element.parentNode) {
-      console.error("Element not found or has no parent.");
-      return;
-    }
-    
-    const parent = element.parentNode;
-    const range = document.createRange();
-    range.selectNodeContents(element);
-    const contentFragment = range.extractContents();
-    
-    if (replacementTag) {
-      const newEl = document.createElement(replacementTag);
-      newEl.appendChild(contentFragment);
-      parent.replaceChild(newEl, element);
-    } else {
-      parent.replaceChild(contentFragment, element);
-    }
-  });
-}
-
-
-
-// Main logic for handling Markdown header syntax on keydown.
-const editor = document.getElementById('editor');
-
-editor.addEventListener('keyup', (e) => {
-  if (e.key === '#' || e.key === ' ') heading()
-});
-
-function heading() {
-  let text = getCaretPosition().container.textContent.slice(0, getCaretPosition().offset);
-  let regex = /^#{1,6}\s*$/;
-  console.log(text);
-
-  if (text.match(regex)) {
-    let level = text.match(/#/g).length;
-    if (getCaretPosition().container.parentNode?.classList.contains('md-syntax')) {}
-    let cool = wrap(`span`, getCaretPosition().container, 0, getCaretPosition().offset);
-    console.log(cool);
-
-    unwrap(getCaretPosition().container.parentNode, `h${level}`);
+  } else {
+    console.log('is inside span')
   }
 }

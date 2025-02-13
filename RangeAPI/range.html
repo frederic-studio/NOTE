@@ -5,9 +5,12 @@
   <title>ContentEditable Range/Selection Demo</title>
   <style>
     #editor {
-      border: 1px solid #ccc;
       padding: 10px;
       min-height: 100px;
+    }
+
+    #editor:focus {
+      outline: none;
     }
     .toolbar button {
       margin-right: 5px;
@@ -16,10 +19,31 @@
     .block {
       background-color: yellow;
     }
+
+    span:not(.active) {
+      font-size: 0;
+      > * {
+        font-size: initial !important;
+      }
+    }
+    span:has(> code), code {
+      font-family: monospace;
+      background-color: hsl(0, 0%, 90%);
+      border-radius: 0.25em;
+    }
+
+    
+
+    span.active, span:has(> .active) {
+      font-size: initial !important;
+    }
+
+
+    
   </style>
 </head>
 <body>
-<div id="editor" contenteditable="true" spellcheck="false"><p>Start typing your Markdown content here...</p></div>
+<div id="editor" contenteditable="true" spellcheck="false"><p>Salut mec <span>`<code>Start</code>`</span>salut petit chou</p></div>
 <script src="range.js"></script>
 </body>
 </html>
