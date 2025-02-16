@@ -2,128 +2,61 @@
 * {margin: 0;}
 body {line-height: 1.5; -webkit-font-smoothing: antialiased;}
 img, picture, video, canvas, svg {display: block; max-width: 100%;}
-input, button, textarea, select {font: inherit; color: inherit;}
-p, h1, h2, h3, h4, h5, h6, li {overflow-wrap: break-word;}
+input, button, textarea, select {font: inherit;}
+p, h1, h2, h3, h4, h5, h6 {overflow-wrap: break-word;}
 #root, #__next {isolation: isolate;}
-input, button {background: none; border: none;}
-.recent-commands::-webkit-scrollbar {display: none;}
-.recent-commands, #command-palette {-ms-overflow-style: none; scrollbar-width: none;}
-*:not([contenteditable]):focus, *:not([contenteditable]):focus-visible {border: none; outline: none;}
+
+
 
 :root {
     font-family: Inter, sans-serif;
     font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
-    --body-background-color: hsl(225, 15%, 95%);
-    --card-background-color: hsl(225, 15%, 100%);
-    --border-color:          hsl(225, 15%, 90%);
-    --accent-color:          hsl(225, 15%, 50%);
-    --text-color:            hsl(225, 15%, 10%);
-    --placeholder-color:     hsl(225, 15%, 50%);
-    scrollbar-color: var(--accent-color) var(--body-background-color);
-    --indent: 1rem;
-    --fontSize: 1rem;
-}
+    --font-size: 1rem;
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        font-family: Inter, sans-serif;
-        font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
-        --body-background-color: hsl(225, 15%, 5%);
-        --card-background-color: hsl(225, 15%, 10%);
-        --border-color:          hsl(225, 15%, 15%);
-        --accent-color:          hsl(225, 15%, 50%);
-        --text-color:            hsl(225, 15%, 100%);
-        --placeholder-color:     hsl(225, 15%, 50%);
-        scrollbar-color: var(--accent-color) var(--body-background-color);
-        --indent: 1rem;
-        --fontSize: 1rem;
-    }
-}
+    --clr-text: hsl(0, 0%, 20%);
+    --clr-bg: hsl(0, 0%, 100%);
+    --clr-border: hsl(0, 0%, 90%);
+    --clr-card-bg: hsl(0, 0%, 95%);
+    --clr-primary: hsla(60, 100%, 50%, 0.5);
+  }
 
-@supports (font-variation-settings: normal) {
-:root { font-family: InterVariable, sans-serif; }
-}
+  @supports (font-variation-settings: normal) {
+    :root { font-family: InterVariable, sans-serif; }
+  }
 
-
-body {
-    padding: 4rem 0.5rem; 
-    background-color: var(--body-background-color);
-    color: var(--text-color);
-    height: 100%;
-}
-
-#note-container > * {
+  #editor {
+    color: var(--clr-text);
+    border: 1px solid var(--clr-border);
+    max-width: 60ch;
+    margin: auto;
+    margin-top: 10%;
+    border-radius: 0.25em;
     padding: 0.25em;
-    height: fit-content;
-    min-height: 2rem;
-}
+  }
 
-#note-container:focus {
-    outline: none;
-}
+  #editor:focus-within {
+    outline: 1px solid var(--clr-primary);
+  }
 
-*:not(.active) > .md-block {
-    display: none;
-}
+span.active:has(> code), span:has(> code.active), span:not(.active) > code:not(.active) {
+    font-family: 'Roboto Mono', monospace;
+    background-color: var(--clr-card-bg);
+    border: 1px solid var(--clr-border);
+    border-radius: 0.25em;
+  }
+  
+  span {
+    font-size: 0;
+  }
 
-.md-block {
-    display: inline-block;
-    color: var(--accent-color);
-    margin-right: 0.5rem;
-    background-color: var(--card-background-color);
-}
+  span code {
+    font-size: calc(var(--font-size) / 1.2);
+  }
 
-blockquote {
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--accent-color);
-    background-color: var(--card-background-color);
-}
+  span.active, span:has(> .active) {
+    font-size: calc(var(--font-size) / 1.2) !important;
+  }
 
-hr {
-    border: none;
-    position: relative;
-
-    &::after {
-        position: absolute;
-        width: 100%;
-        height: 1px;
-        background-color: var(--border-color);
-        content: '';
-        top: 50%;
-    }
-}
-
-hr.active::after {height: 0px;}
-
-
-pre {
-    width: 100%;
-    background-color: var(--card-background-color);
-}
-
-span.md-inline {
-    font-family: monospace;
-    background-color: var(--card-background-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 0.25em !important;
-    padding: 0.25em !important;
-    font-size: 0 !important;
-    > *{
-        font-size: 1rem !important;
-        background-color: var(--card-background-color) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 0.25em !important;
-        padding: 0.25em !important;
-    }
-}
-
-span.md-inline.active, span.md-inline:has(.active) {
-    font-size: 1rem !important;
-    .active {
-        padding: 0rem !important;
-        background: none !important;
-        border: none !important;
-        border-radius: 0em !important;
-        padding: 0em !important;
-    }
-}
+  *::selection {
+    background-color: var(--clr-primary);
+  }

@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Note Editor</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://rsms.me/">
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <meta name="description" content="A simple note editor">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta charset="UTF-8">
+  <title>ContentEditable Range/Selection Demo</title>
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main id="note-container" spellcheck="false" contenteditable="true">
-        <p>Titre</p>
-    </main>
-
-
-    <script src="script.js"></script>
+<div id="editor" contenteditable="true" spellcheck="false"><p>Salut mec <span>`<code>Start</code>`</span>salut petit chou</p></div>
+<script src="script.js"></script>
 </body>
 </html>
