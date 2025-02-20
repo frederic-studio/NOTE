@@ -1,10 +1,12 @@
 const editor = document.getElementById("editor");
+const inlineSyntax = ["*", "_", "~", "`"];
 
 editor.addEventListener("input", () => {
   const target = window.getSelection().focusNode;
   const range = document.createRange();
 
   if (target.parentNode.tagName === 'SPAN' && target.textContent.length > 1 && getCaretPosition().offset === target.textContent.length) insideSyntax(target, range);
+  editor.normalize();
 });
 
 function insideSyntax(target, range) {
@@ -22,9 +24,9 @@ function insideSyntax(target, range) {
 
 
 // If inline element is empty, insert zero-width space
-// If inline element is empty and zero-width space is present, remove zero-width space and previous character**
-// If typed character is not a space or backspace and zero-width space is present, remove zero-width space
-// If typed character is space and at the right edge of inline syntax, insert space after inline syntax.
+// If inline element is empty and zero-width space is present, remove all md-syntax and zero-width space
+// If space on right syntax, insert proper space after inline syntax
+// If syntax is deleted, make it regular text
 
 editor.addEventListener("keydown", (event) => handleEditorKeydown(event));
 
@@ -33,25 +35,98 @@ function handleEditorKeydown(event) {
   const isBackspace = event.key === 'Backspace';
   const isSpace = event.key === ' ';
   const inSpanContext = focusedNode.parentNode.closest('span');
+  const isRightSyntax = focusedNode.previousSibling && focusedNode.parentNode.tagName === 'SPAN';
+  const isLeftSyntax = focusedNode.nextSibling && focusedNode.parentNode.tagName === 'SPAN';
   const hasZeroWidthSpace = focusedNode.textContent.includes('\u200b');
+  let position = null;
+  let target = null;
 
-  if (inSpanContext && focusedNode.parentNode.tagName !== 'SPAN' && focusedNode.textContent.length === 1 && isBackspace && !hasZeroWidthSpace) {
-    event.preventDefault();
-    focusedNode.textContent = '\u200b';
-    setCaretPosition(focusedNode, 'setStart', 1);
-  } else if (inSpanContext && focusedNode.parentNode.tagName !== 'SPAN' && focusedNode.textContent.length === 1 && isBackspace && hasZeroWidthSpace) {
-    event.preventDefault();
-    setCaretPosition(focusedNode.parentNode.parentNode.previousSibling, 'setStart', focusedNode.parentNode.parentNode.previousSibling.textContent.length);
+    if (inSpanContext && focusedNode.parentNode.tagName !== 'SPAN' && focusedNode.textContent.length === 1 && isBackspace) {
+      event.preventDefault();
+      if (!hasZeroWidthSpace) {
+        focusedNode.textContent = '\u200b';
+        setCaretPosition(focusedNode, 'setStart', 1);
+      } else if (hasZeroWidthSpace) {
+        target = focusedNode.parentNode.parentNode.previousSibling;
+        position = focusedNode.parentNode.parentNode.previousSibling.textContent.length;
+        setCaretPosition(target, 'setStart', position);
+        focusedNode.parentNode.parentNode.remove();
+        editor.normalize();
+      }
+      return;
   }
 
-  if (!isBackspace && !isSpace && hasZeroWidthSpace) focusedNode.textContent = focusedNode.textContent.replace('\u200b', '');
-  if (isSpace && inSpanContext && focusedNode.parentNode?.nextSibling?.parentNode?.tagName !== 'SPAN' && getCaretPosition().offset === focusedNode.textContent.length) {
+  if (isSpace && isRightSyntax && getCaretPosition().offset === focusedNode.textContent.length) {
     event.preventDefault();
     focusedNode.parentNode.after(document.createTextNode(' '));
-    setCaretPosition(focusedNode.parentNode.nextSibling.nextSibling, 'setStart', 0); 
+    editor.normalize();
+    setCaretPosition(focusedNode.parentNode.nextSibling, 'setStart', 1);
+    return;
+  }
+
+  if (isBackspace && (isLeftSyntax || isRightSyntax)) {
+    event.preventDefault();
+    focusedNode.textContent = ''
+    let span = focusedNode.parentNode.closest('span');
+    let text = span.textContent
+    span.before(document.createTextNode(text));
+    if (isRightSyntax) setCaretPosition(span.nextSibling, 'setStart', 0);
+    if (isLeftSyntax) setCaretPosition(span.previousSibling, 'setStart', 0);
+    span.remove();
+    editor.normalize();
+    return;
+  }
+
+  if (inlineSyntax.includes(event.key)) {
+    let block = focusedNode.parentNode.closest('#editor > *');
+    let text = extractContents(block);
+    if (text.search(event.key) !== -1) {
+      console.log('Syntax already exists');
+      text.search(event.key) < getCaretPosition().offset ? first = text.search(event.key) : first = getCaretPosition().offset;
+      text.search(event.key) > getCaretPosition().offset ? last = text.search(event.key) : last = getCaretPosition().offset;
+      console.log(first, last);
+      setRange(block, first, last).surroundContents(document.createElement('em'));
+    
+    }
   }
 };
 
+function extractContents(content) {
+  let text = '';
+  content.childNodes.forEach(node => {
+    if (node.nodeType === 3) text += node.textContent; 
+  });
+  return text;
+}
+
+function setRange(container, start, end) {
+  let range = document.createRange();
+  let accumulatedLength = 0;
+  let startSet = false;
+
+  for (let i = 0; i < container.childNodes.length; i++) {
+    let child = container.childNodes[i];
+    let childLength = child.textContent.length;
+
+    // If the start position lies within this child node, set the start of the range.
+    if (!startSet && accumulatedLength + childLength >= start) {
+      let offset = start - accumulatedLength;
+      range.setStart(child, offset);
+      startSet = true;
+    }
+    
+    // If the end position lies within this child node, set the end of the range.
+    if (accumulatedLength + childLength >= end) {
+      let offset = end - accumulatedLength;
+      range.setEnd(child, offset);
+      break;
+    }
+    
+    accumulatedLength += childLength;
+  }
+
+  return range;
+}
 
 
 // Add active class to the current focused node on every selection change
@@ -86,6 +161,7 @@ document.addEventListener("selectionchange", () => {
   );
   let node;
   if (selection.containsNode(commonAncestor, true)) commonAncestor.classList.add("active");
+  if (selection.focusNode?.nextSibling?.tagName === 'SPAN' && getCaretPosition().offset === selection.focusNode.textContent.length) selection.focusNode.nextSibling.classList.add("active");
   while ((node = walker.nextNode())) node.classList.add("active");
   
 });
@@ -120,6 +196,7 @@ function setCaretPosition(node, method, position) {
 
       sel.removeAllRanges();
       sel.addRange(range);
+      editor.normalize();
 }
 
 function getCaretPosition() {

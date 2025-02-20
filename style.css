@@ -26,7 +26,6 @@ p, h1, h2, h3, h4, h5, h6 {overflow-wrap: break-word;}
 
   #editor {
     color: var(--clr-text);
-    border: 1px solid var(--clr-border);
     max-width: 60ch;
     margin: auto;
     margin-top: 10%;
@@ -39,9 +38,7 @@ p, h1, h2, h3, h4, h5, h6 {overflow-wrap: break-word;}
   }
 
 span.active:has(> code), span:has(> code.active), span:not(.active) > code:not(.active) {
-    font-family: 'Roboto Mono', monospace;
     background-color: var(--clr-card-bg);
-    border: 1px solid var(--clr-border);
     border-radius: 0.25em;
   }
   
@@ -50,11 +47,15 @@ span.active:has(> code), span:has(> code.active), span:not(.active) > code:not(.
   }
 
   span code {
-    font-size: calc(var(--font-size) / 1.2);
+    padding: 0.15em;
+    font-family: 'Roboto Mono', monospace;
+    font-size: calc(var(--font-size) / 1);
   }
 
   span.active, span:has(> .active) {
-    font-size: calc(var(--font-size) / 1.2) !important;
+    font-family: 'Roboto Mono', monospace;
+    padding: 0.15em;
+    font-size: calc(var(--font-size) / 1) !important;
   }
 
   *::selection {
