@@ -4,12 +4,13 @@ const inlineSyntax = ["*", "_", "~", "`"];
 editor.addEventListener("input", () => {
   const target = window.getSelection().focusNode;
   const range = document.createRange();
-
+  console.log(target);
   if (target.parentNode.tagName === 'SPAN' && target.textContent.length > 1 && getCaretPosition().offset === target.textContent.length) insideSyntax(target, range);
-  editor.normalize();
 });
 
 function insideSyntax(target, range) {
+  console.log('insideSyntax');
+  console.log(target, target.nextSibling, target.nextSibling.child);
   range.setStart(target, target.length - 1); // From the start
   range.setEnd(target, target.length); // To the second character
   const extractedContent = range.extractContents();
@@ -17,9 +18,14 @@ function insideSyntax(target, range) {
       target.parentNode.after(extractedContent);
       setCaretPosition(target.parentNode.nextSibling, 'setStart', 1);
   } else {
-      target.nextSibling.childNodes[0].before(extractedContent);
+      if (target.nextSibling.childNodes[0]) {
+        target.nextSibling.childNodes[0].before(extractedContent);
+        setCaretPosition(target.nextSibling.childNodes[0], 'setStart', 1);
+      } else {
+        target.nextSibling.appendChild(extractedContent);
       setCaretPosition(target.nextSibling.childNodes[0], 'setStart', 1);
   }
+}
 }
 
 
@@ -40,6 +46,7 @@ function handleEditorKeydown(event) {
   const hasZeroWidthSpace = focusedNode.textContent.includes('\u200b');
   let position = null;
   let target = null;
+
 
     if (inSpanContext && focusedNode.parentNode.tagName !== 'SPAN' && focusedNode.textContent.length === 1 && isBackspace) {
       event.preventDefault();
@@ -64,14 +71,18 @@ function handleEditorKeydown(event) {
     return;
   }
 
+
   if (isBackspace && (isLeftSyntax || isRightSyntax)) {
     event.preventDefault();
     focusedNode.textContent = ''
     let span = focusedNode.parentNode.closest('span');
     let text = span.textContent
-    span.before(document.createTextNode(text));
-    if (isRightSyntax) setCaretPosition(span.nextSibling, 'setStart', 0);
-    if (isLeftSyntax) setCaretPosition(span.previousSibling, 'setStart', 0);
+    let textNode = document.createTextNode(text);
+    span.before(textNode);
+    if (isRightSyntax) setCaretPosition(textNode, 'setStart', text.length); 
+    if (isLeftSyntax) setCaretPosition(textNode, 'setStart', 0);
+      
+    
     span.remove();
     editor.normalize();
     return;
@@ -79,24 +90,58 @@ function handleEditorKeydown(event) {
 
   if (inlineSyntax.includes(event.key)) {
     let block = focusedNode.parentNode.closest('#editor > *');
-    let text = extractContents(block);
-    if (text.search(event.key) !== -1) {
-      console.log('Syntax already exists');
-      text.search(event.key) < getCaretPosition().offset ? first = text.search(event.key) : first = getCaretPosition().offset;
-      text.search(event.key) > getCaretPosition().offset ? last = text.search(event.key) : last = getCaretPosition().offset;
-      console.log(first, last);
-      setRange(block, first, last).surroundContents(document.createElement('em'));
-    
+    let foundSyntax = findCharacterOccurrences(block, event.key)
+    if (foundSyntax.length === 1) {
+      event.preventDefault();
+      const range = document.createRange();
+      range.setStart(foundSyntax[0].node, foundSyntax[0].offset);
+      range.setEnd(focusedNode, getCaretPosition().offset);
+      range.surroundContents(document.createElement('span'));
+      let span = foundSyntax[0].node.nextSibling;
+      setRange(span, 1, span.textContent.length).surroundContents(document.createElement('code'));
+      foundSyntax[0].node.nextSibling.childNodes[1].after(document.createTextNode(event.key));
+      setCaretPosition(foundSyntax[0].node.nextSibling.childNodes[2], 'setStart', 1);
+      editor.normalize();
     }
   }
 };
 
-function extractContents(content) {
-  let text = '';
-  content.childNodes.forEach(node => {
-    if (node.nodeType === 3) text += node.textContent; 
-  });
-  return text;
+
+
+
+function findCharacterOccurrences(root, character) {
+  const results = [];
+  
+  // Create a TreeWalker that only shows text nodes.
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) => {
+        // Skip text nodes if they are inside a <span>
+        if (node.parentElement && node.parentElement.closest('span')) {
+          return NodeFilter.FILTER_SKIP;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+  
+  let currentNode;
+  while (currentNode = walker.nextNode()) {
+    const text = currentNode.textContent;
+    let index = text.indexOf(character);
+    // Look for all occurrences of the character in the text node.
+    while (index !== -1) {
+      results.push({
+        node: currentNode,
+        offset: index
+      });
+      index = text.indexOf(character, index + 1);
+    }
+  }
+  
+  return results;
 }
 
 function setRange(container, start, end) {
@@ -142,6 +187,7 @@ document.addEventListener("selectionchange", () => {
   document.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
   const selection = window.getSelection();
   if (!selection.rangeCount) return;
+
   const range = selection.getRangeAt(0);
   const commonAncestor =
     range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
