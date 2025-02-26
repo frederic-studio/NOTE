@@ -1,16 +1,16 @@
 const editor = document.getElementById("editor");
 const inlineSyntax = ["*", "_", "~", "`"];
+const whitespaceOrPunctuation = [" ", "\t", "\n", "\r", "\f", "\v", ".", ",", ":", ";", "!", "?", "(", ")", "[", "]", "{", "}", "<", ">", "'", '"', "«", "»", "„", "“", "”", "‘", "’", "‚", "‹", "›", "‛"];
+const span = document.createElement('span');
+const zws = document.createTextNode('\u200b');
 
 editor.addEventListener("input", () => {
   const target = window.getSelection().focusNode;
   const range = document.createRange();
-  console.log(target);
   if (target.parentNode.tagName === 'SPAN' && target.textContent.length > 1 && getCaretPosition().offset === target.textContent.length) insideSyntax(target, range);
 });
 
 function insideSyntax(target, range) {
-  console.log('insideSyntax');
-  console.log(target, target.nextSibling, target.nextSibling.child);
   range.setStart(target, target.length - 1); // From the start
   range.setEnd(target, target.length); // To the second character
   const extractedContent = range.extractContents();
@@ -87,23 +87,6 @@ function handleEditorKeydown(event) {
     editor.normalize();
     return;
   }
-
-  if (inlineSyntax.includes(event.key)) {
-    let block = focusedNode.parentNode.closest('#editor > *');
-    let foundSyntax = findCharacterOccurrences(block, event.key)
-    if (foundSyntax.length === 1) {
-      event.preventDefault();
-      const range = document.createRange();
-      range.setStart(foundSyntax[0].node, foundSyntax[0].offset);
-      range.setEnd(focusedNode, getCaretPosition().offset);
-      range.surroundContents(document.createElement('span'));
-      let span = foundSyntax[0].node.nextSibling;
-      setRange(span, 1, span.textContent.length).surroundContents(document.createElement('code'));
-      foundSyntax[0].node.nextSibling.childNodes[1].after(document.createTextNode(event.key));
-      setCaretPosition(foundSyntax[0].node.nextSibling.childNodes[2], 'setStart', 1);
-      editor.normalize();
-    }
-  }
 };
 
 
@@ -173,6 +156,65 @@ function setRange(container, start, end) {
   return range;
 }
 
+editor.addEventListener("keyup", (event) => {
+  if (inlineSyntax.includes(event.key)) {
+    const selection = window.getSelection();
+    let node = selection.focusNode;
+    let position = getCaretPosition().offset;
+    const block = /^(UL|OL|FORM)$/.test(node.parentNode.closest('#editor > *').tagName) 
+      ? node.parentNode.closest('#editor > * > *') 
+      : node.parentNode.closest('#editor > *');
+
+    let precedingCharacter = "";
+    let followingCharacter = "";
+
+    function moveToNextValidNode(currentNode, direction) {
+      while (currentNode && currentNode[direction]) {
+        currentNode = currentNode[direction];
+        if (currentNode.textContent.trim().length > 0) return currentNode;
+      }
+      return null;
+    }
+
+    if (position === 0 || position === node.textContent.length) {
+      let direction = position === 0 ? "previousSibling" : "nextSibling";
+      let newNode = moveToNextValidNode(node, direction);
+      if (!newNode && block) newNode = moveToNextValidNode(node.parentNode, direction);
+      if (newNode) {
+        node = newNode;
+        position = position === 0 ? node.textContent.length - 1 : 0;
+      }
+    }
+
+    let precedingIndex = position - 1;
+    let followingIndex = position;
+
+    while (precedingIndex >= 0 && node.textContent.charAt(precedingIndex) === event.key) {
+      precedingIndex--;
+    }
+    if (precedingIndex >= 0) {
+      precedingCharacter = node.textContent.charAt(precedingIndex);
+    } else if (node.previousSibling) {
+      let prevNode = moveToNextValidNode(node, "previousSibling");
+      if (prevNode) precedingCharacter = prevNode.textContent.slice(-1);
+    }
+
+    while (followingIndex < node.textContent.length && node.textContent.charAt(followingIndex) === event.key) {
+      followingIndex++;
+    }
+    if (followingIndex < node.textContent.length) {
+      followingCharacter = node.textContent.charAt(followingIndex);
+    } else if (node.nextSibling) {
+      let nextNode = moveToNextValidNode(node, "nextSibling");
+      if (nextNode) followingCharacter = nextNode.textContent.charAt(0);
+    }
+
+    console.log(`'${precedingCharacter}${event.key}${followingCharacter}'`);
+  }
+});
+
+
+
 
 // Add active class to the current focused node on every selection change
 // If the next character is a span element, add active class to the span element
@@ -187,7 +229,6 @@ document.addEventListener("selectionchange", () => {
   document.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
   const selection = window.getSelection();
   if (!selection.rangeCount) return;
-
   const range = selection.getRangeAt(0);
   const commonAncestor =
     range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
@@ -261,5 +302,3 @@ function getCaretPosition() {
   }
   return null;
 }
-
-
